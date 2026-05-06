@@ -1,4 +1,4 @@
-import { supabaseServer as supabase } from '@/lib/supabase/server'
+import { supabaseAdmin as supabase } from '@/lib/supabase/service'
 import { notFound } from 'next/navigation'
 import Header from '@/components/ui/Header'
 import { calcularPuntosGrupo, calcularPuntosBonus } from '@/lib/puntos'
@@ -37,7 +37,7 @@ export default async function MiProdePage({ params }: Props) {
   const [
     { data: bonus },
     { data: pronosticosGruposRaw },
-    { data: pronosticosElim },
+    { data: pronosticosElim, error: elimError },
     { data: resultBonus },
   ] = await Promise.all([
     supabase.from('bonus').select('*').eq('participante_id', participante.id).single(),
@@ -51,6 +51,10 @@ export default async function MiProdePage({ params }: Props) {
       .eq('participante_id', participante.id),
     supabase.from('resultados_bonus').select('*').eq('id', 1).single(),
   ])
+
+  console.log('[mi-prode] participante_id:', participante.id)
+  console.log('[mi-prode] pronosticosElim count:', pronosticosElim?.length ?? 0)
+  console.log('[mi-prode] pronosticosElim error:', elimError)
 
   // Fetch partido details for the group pronosticos
   const partidosMap = new Map<number, {
