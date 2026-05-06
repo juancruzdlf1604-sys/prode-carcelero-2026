@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client'
+import { supabaseServer as supabase } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Header from '@/components/ui/Header'
 import { BANDERAS } from '@/lib/types'

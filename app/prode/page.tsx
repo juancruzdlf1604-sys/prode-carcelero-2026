@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Header from '@/components/ui/Header'
 import { PARTIDOS_GRUPOS, GRUPOS_DATA } from '@/lib/partidos-data'
 import { BANDERAS } from '@/lib/types'
-import { supabase } from '@/lib/supabase/client'
+import { supabaseServer as supabase } from '@/lib/supabase/server'
 
 // Revalidar cada 5 minutos para mostrar resultados frescos
 export const revalidate = 300

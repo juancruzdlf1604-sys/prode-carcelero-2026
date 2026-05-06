@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase/client'
+import { supabaseServer as supabase } from '@/lib/supabase/server'
 import RayasDecorativas, { RayasHorizontales } from '@/components/ui/RayasDecorativos'
 import Header from '@/components/ui/Header'
 import Countdown from '@/components/ui/Countdown'

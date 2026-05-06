@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Header from '@/components/ui/Header'
 import RayasDecorativas, { RayasHorizontales } from '@/components/ui/RayasDecorativos'
-import { supabase } from '@/lib/supabase/client'
+import { supabaseServer as supabase } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
