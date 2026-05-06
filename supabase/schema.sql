@@ -1,10 +1,22 @@
 -- ============================================================
 -- PRODE CARCELERO 2026 — Club San Carlos Rugby
 -- Schema para Supabase — ejecutar en SQL Editor
+-- Idempotente: se puede correr N veces, borra y recrea todo
 -- ============================================================
 
 -- Extensiones
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================================
+-- LIMPIEZA — eliminar tablas en orden de dependencias
+-- ============================================================
+DROP TABLE IF EXISTS pronosticos_grupos       CASCADE;
+DROP TABLE IF EXISTS pronosticos_eliminatorias CASCADE;
+DROP TABLE IF EXISTS bonus                    CASCADE;
+DROP TABLE IF EXISTS resultados_bonus         CASCADE;
+DROP TABLE IF EXISTS partidos                 CASCADE;
+DROP TABLE IF EXISTS participantes            CASCADE;
+DROP TABLE IF EXISTS configuracion            CASCADE;
 
 -- ============================================================
 -- CONFIGURACIÓN DEL PRODE (precio, premios, etc.)
@@ -279,7 +291,8 @@ INSERT INTO partidos (id, fase, grupo, ronda, equipo_local, equipo_visitante, fe
 (69, 'grupos', 'L', 2, 'Inglaterra', 'Ghana',   '2026-06-22'),
 (70, 'grupos', 'L', 2, 'Croacia',    'Panamá',  '2026-06-22'),
 (71, 'grupos', 'L', 3, 'Inglaterra', 'Panamá',  '2026-07-02'),
-(72, 'grupos', 'L', 3, 'Croacia',    'Ghana',   '2026-07-02');
+(72, 'grupos', 'L', 3, 'Croacia',    'Ghana',   '2026-07-02')
+ON CONFLICT (id) DO NOTHING;
 
 -- Resetear el sequence de partidos para que próximos inserts (fase eliminatoria) continúen desde 73
 SELECT setval('partidos_id_seq', 72);
