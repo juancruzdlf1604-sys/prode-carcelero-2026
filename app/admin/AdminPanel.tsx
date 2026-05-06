@@ -1010,25 +1010,54 @@ function TabSync() {
 
 function TabConfig() {
   const [config, setConfig] = useState<Configuracion[]>([])
+  const [loading, setLoading] = useState(true)
   const [guardados, setGuardados] = useState<Set<string>>(new Set())
+  const [errores, setErrores] = useState<Record<string, string>>({})
+
+  const CLAVES_OCULTAS = ['ultima_sincronizacion', 'ultima_sync_resumen']
 
   useEffect(() => {
     supabase.from('configuracion').select('*').order('clave')
-      .then(({ data }) => setConfig(data || []))
+      .then(({ data, error }) => {
+        if (error) console.error('Error cargando config:', error)
+        setConfig((data || []).filter(c => !CLAVES_OCULTAS.includes(c.clave)))
+        setLoading(false)
+      })
   }, [])
 
   const updateConfig = (clave: string, valor: string) => {
     setConfig(prev => prev.map(c => c.clave === clave ? { ...c, valor } : c))
+    setErrores(prev => { const n = { ...prev }; delete n[clave]; return n })
   }
 
   const guardarItem = async (item: Configuracion) => {
-    await supabase.from('configuracion').update({ valor: item.valor }).eq('clave', item.clave)
+    const { error } = await supabase
+      .from('configuracion')
+      .update({ valor: item.valor })
+      .eq('clave', item.clave)
+
+    if (error) {
+      setErrores(prev => ({ ...prev, [item.clave]: error.message }))
+      return
+    }
+
     setGuardados(prev => new Set(Array.from(prev).concat(item.clave)))
     setTimeout(() => setGuardados(prev => {
       const s = new Set(Array.from(prev))
       s.delete(item.clave)
       return s
     }), 2000)
+  }
+
+  const LABELS: Record<string, string> = {
+    precio_inscripcion: 'Precio de inscripción ($)',
+    alias_pago: 'Alias CBU',
+    cbu_pago: 'CBU',
+    whatsapp_admin: 'WhatsApp admin (con código país)',
+    prode_abierto: 'Prode abierto (true / false)',
+    premio_primero: '1° Premio',
+    premio_segundo: '2° Premio',
+    premio_tercero: '3° Premio',
   }
 
   return (
@@ -1038,32 +1067,44 @@ function TabConfig() {
         <p className="text-white/50 text-sm">Precio de inscripción, alias de pago, WhatsApp del organizador, etc.</p>
       </div>
 
-      {config.map(item => (
-        <div key={item.clave} className="bg-naval rounded-xl border border-azul/20 p-4">
-          <label className="text-dorado text-xs font-bold uppercase tracking-wider mb-1 block">
-            {item.clave.replace(/_/g, ' ')}
-          </label>
-          {item.descripcion && (
-            <p className="text-white/40 text-xs mb-2">{item.descripcion}</p>
-          )}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={item.valor}
-              onChange={e => updateConfig(item.clave, e.target.value)}
-              className="flex-1 bg-oscuro border border-azul/50 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-dorado text-sm"
-            />
-            <button
-              onClick={() => guardarItem(item)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                guardados.has(item.clave) ? 'bg-green-700 text-white' : 'bg-azul text-white hover:bg-blue-600'
-              }`}
-            >
-              {guardados.has(item.clave) ? '✓' : 'Guardar'}
-            </button>
-          </div>
+      {loading ? (
+        <div className="text-center py-8 text-white/40">Cargando...</div>
+      ) : config.length === 0 ? (
+        <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-xl p-4 text-sm text-yellow-300">
+          <p className="font-semibold mb-1">⚠️ Tabla de configuración no encontrada o vacía</p>
+          <p className="text-yellow-300/70">Ejecutá el SQL de configuración en Supabase.</p>
         </div>
-      ))}
+      ) : (
+        config.map(item => (
+          <div key={item.clave} className="bg-naval rounded-xl border border-azul/20 p-4">
+            <label className="text-dorado text-xs font-bold uppercase tracking-wider mb-1 block">
+              {LABELS[item.clave] ?? item.clave.replace(/_/g, ' ')}
+            </label>
+            {item.descripcion && (
+              <p className="text-white/40 text-xs mb-2">{item.descripcion}</p>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={item.valor}
+                onChange={e => updateConfig(item.clave, e.target.value)}
+                className="flex-1 bg-oscuro border border-azul/50 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-dorado text-sm"
+              />
+              <button
+                onClick={() => guardarItem(item)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  guardados.has(item.clave) ? 'bg-green-700 text-white' : 'bg-azul text-white hover:bg-blue-600'
+                }`}
+              >
+                {guardados.has(item.clave) ? '✓' : 'Guardar'}
+              </button>
+            </div>
+            {errores[item.clave] && (
+              <p className="text-red-400 text-xs mt-2">⚠️ Error: {errores[item.clave]}</p>
+            )}
+          </div>
+        ))
+      )}
     </div>
   )
 }
