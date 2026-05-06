@@ -20,6 +20,24 @@ const RONDAS_LABELS: Record<string, string> = {
   final: 'Final',
 }
 
+interface PartidoDB {
+  id: number
+  equipo_local: string
+  equipo_visitante: string
+  goles_local_real: number | null
+  goles_visitante_real: number | null
+  jugado: boolean
+  grupo: string | null
+  ronda: number | null
+  fecha: string | null
+}
+
+interface DetallePartido {
+  partido: PartidoDB
+  pron: { goles_local: number; goles_visitante: number }
+  puntos: number | null
+}
+
 export default async function MiProdePage({ params }: Props) {
   const codigo = params.codigo.toUpperCase()
 
@@ -31,6 +49,7 @@ export default async function MiProdePage({ params }: Props) {
 
   if (!participante) notFound()
 
+  // Fetch all data in parallel — pronosticos_grupos and partidos as separate queries
   const [
     { data: bonus },
     { data: pronosticosGruposRaw },
@@ -40,7 +59,7 @@ export default async function MiProdePage({ params }: Props) {
     supabase.from('bonus').select('*').eq('participante_id', participante.id).single(),
     supabase
       .from('pronosticos_grupos')
-      .select('goles_local, goles_visitante, partidos(id, equipo_local, equipo_visitante, goles_local_real, goles_visitante_real, jugado, grupo, ronda, fecha)')
+      .select('partido_id, goles_local, goles_visitante')
       .eq('participante_id', participante.id),
     supabase
       .from('pronosticos_eliminatorias')
@@ -49,28 +68,24 @@ export default async function MiProdePage({ params }: Props) {
     supabase.from('resultados_bonus').select('*').eq('id', 1).single(),
   ])
 
-  // Calcular puntos de grupos y organizar por grupo
-  let puntosGrupos = 0
-  let exactosGrupos = 0
-
-  interface DetallePartido {
-    partido: {
-      id: number; equipo_local: string; equipo_visitante: string
-      goles_local_real: number | null; goles_visitante_real: number | null
-      jugado: boolean; grupo: string | null; ronda: number | null; fecha: string | null
-    }
-    pron: { goles_local: number; goles_visitante: number }
-    puntos: number | null
+  // Fetch partido details separately to avoid embedded join issues
+  const partidosMap = new Map<number, PartidoDB>()
+  if (pronosticosGruposRaw?.length) {
+    const ids = pronosticosGruposRaw.map(pg => pg.partido_id)
+    const { data: partidos } = await supabase
+      .from('partidos')
+      .select('id, equipo_local, equipo_visitante, goles_local_real, goles_visitante_real, jugado, grupo, ronda, fecha')
+      .in('id', ids)
+    partidos?.forEach(p => partidosMap.set(p.id, p))
   }
 
+  // Build group map with punto calculation
+  let puntosGrupos = 0
+  let exactosGrupos = 0
   const grupoMap = new Map<string, DetallePartido[]>()
 
-  // Supabase puede devolver la join como objeto o array según la versión del cliente
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  pronosticosGruposRaw?.forEach((pg: any) => {
-    const partido: DetallePartido['partido'] | null = Array.isArray(pg.partidos)
-      ? (pg.partidos[0] ?? null)
-      : pg.partidos
+  pronosticosGruposRaw?.forEach(pg => {
+    const partido = partidosMap.get(pg.partido_id)
     if (!partido) return
 
     let puntos: number | null = null
@@ -89,13 +104,13 @@ export default async function MiProdePage({ params }: Props) {
     grupoMap.set(grupo, arr)
   })
 
-  // Ordenar partidos dentro de cada grupo por ronda
+  // Sort partidos within each group by ronda
   Array.from(grupoMap.values()).forEach(partidos => {
     partidos.sort((a, b) => (a.partido.ronda ?? 0) - (b.partido.ronda ?? 0))
   })
   const grupos = Array.from(grupoMap.keys()).sort()
 
-  // Organizar eliminatorias por ronda
+  // Build rounds map for eliminatorias
   const rondasMap = new Map<string, typeof pronosticosElim>()
   pronosticosElim?.forEach(pe => {
     const arr = rondasMap.get(pe.ronda) || []
@@ -168,10 +183,14 @@ export default async function MiProdePage({ params }: Props) {
         )}
 
         {/* Fase de grupos */}
-        {grupos.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-dorado font-bold text-sm uppercase tracking-wider px-1">⚽ Fase de grupos</h2>
-            {grupos.map(grupo => (
+        <div className="space-y-3">
+          <h2 className="text-dorado font-bold text-sm uppercase tracking-wider px-1">⚽ Fase de grupos</h2>
+          {grupos.length === 0 ? (
+            <div className="bg-naval rounded-xl border border-azul/30 px-4 py-6 text-center text-white/30 text-sm">
+              No hay pronósticos de grupos cargados
+            </div>
+          ) : (
+            grupos.map(grupo => (
               <div key={grupo} className="bg-naval rounded-xl border border-azul/30 overflow-hidden">
                 <div className="bg-azul/10 px-4 py-2.5 border-b border-azul/20">
                   <h3 className="text-white font-bold text-sm">Grupo {grupo}</h3>
@@ -208,9 +227,9 @@ export default async function MiProdePage({ params }: Props) {
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
 
         {/* Eliminatorias */}
         {hayEliminatorias && (
