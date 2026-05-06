@@ -1,5 +1,9 @@
 import type { Bonus, ResultadosBonus } from './types'
 
+export function normalizarString(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+
 export function calcularPuntosGrupo(
   pronostico: { goles_local: number; goles_visitante: number },
   real: { goles_local_real: number; goles_visitante_real: number }
@@ -43,8 +47,8 @@ export function calcularPuntosBonus(bonus: Bonus, resultados: ResultadosBonus): 
   let puntos = 0
   if (resultados.campeon && bonus.campeon === resultados.campeon) puntos += 100
   if (resultados.subcampeon && bonus.subcampeon === resultados.subcampeon) puntos += 50
-  if (resultados.goleador && bonus.goleador === resultados.goleador) puntos += 50
-  if (resultados.guante_oro && bonus.guante_oro === resultados.guante_oro) puntos += 50
-  if (resultados.mejor_joven && bonus.mejor_joven === resultados.mejor_joven) puntos += 50
+  if (resultados.goleador && normalizarString(bonus.goleador) === normalizarString(resultados.goleador)) puntos += 50
+  if (resultados.guante_oro && normalizarString(bonus.guante_oro) === normalizarString(resultados.guante_oro)) puntos += 50
+  if (resultados.mejor_joven && normalizarString(bonus.mejor_joven) === normalizarString(resultados.mejor_joven)) puntos += 50
   return puntos
 }

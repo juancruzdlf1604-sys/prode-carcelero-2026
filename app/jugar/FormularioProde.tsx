@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Stepper from '@/components/ui/Stepper'
 import PasoIdentidad from './pasos/PasoIdentidad'
@@ -8,8 +8,8 @@ import PasoBonus from './pasos/PasoBonus'
 import PasoGrupos from './pasos/PasoGrupos'
 import PasoEliminatorias from './pasos/PasoEliminatorias'
 import PasoResumen from './pasos/PasoResumen'
-import type { Partido } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
+import { PARTIDOS_GRUPOS } from '@/lib/partidos-data'
 
 export interface DatosProde {
   nombre: string
@@ -30,6 +30,7 @@ export interface DatosProde {
     equipo_visitante: string
     goles_local: number
     goles_visitante: number
+    ganador?: string
   }>
 }
 
@@ -47,22 +48,9 @@ const datosIniciales: DatosProde = {
 export default function FormularioProde() {
   const [paso, setPaso] = useState(0)
   const [datos, setDatos] = useState<DatosProde>(datosIniciales)
-  const [partidos, setPartidos] = useState<Partido[]>([])
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-
-  useEffect(() => {
-    supabase
-      .from('partidos')
-      .select('*')
-      .eq('fase', 'grupos')
-      .order('grupo')
-      .order('ronda')
-      .then(({ data }) => {
-        if (data) setPartidos(data)
-      })
-  }, [])
 
   const siguiente = () => setPaso(p => Math.min(p + 1, PASOS.length - 1))
   const anterior = () => setPaso(p => Math.max(p - 1, 0))
@@ -75,7 +63,6 @@ export default function FormularioProde() {
     setEnviando(true)
     setError('')
     try {
-      // Obtener próximo número para el código
       const { count } = await supabase
         .from('participantes')
         .select('*', { count: 'exact', head: true })
@@ -83,7 +70,6 @@ export default function FormularioProde() {
       const numero = (count ?? 0) + 1
       const codigo = `SC-${String(numero).padStart(4, '0')}`
 
-      // Insertar participante
       const { data: participante, error: errPart } = await supabase
         .from('participantes')
         .insert({ codigo, nombre: datos.nombre, apellido: datos.apellido, whatsapp: datos.whatsapp })
@@ -92,13 +78,11 @@ export default function FormularioProde() {
 
       if (errPart || !participante) throw new Error(errPart?.message || 'Error al crear participante')
 
-      // Insertar bonus
       await supabase.from('bonus').insert({
         participante_id: participante.id,
         ...datos.bonus,
       })
 
-      // Insertar pronósticos de grupos
       const pronosticosGrupos = Object.entries(datos.pronosticos).map(([partido_id, goles]) => ({
         participante_id: participante.id,
         partido_id: parseInt(partido_id),
@@ -109,7 +93,6 @@ export default function FormularioProde() {
         await supabase.from('pronosticos_grupos').insert(pronosticosGrupos)
       }
 
-      // Insertar pronósticos eliminatorias
       const pronosticosElim = Object.values(datos.eliminatorias).map(e => ({
         participante_id: participante.id,
         fase: e.fase,
@@ -144,41 +127,21 @@ export default function FormularioProde() {
 
       <div className="animate-fadeIn">
         {paso === 0 && (
-          <PasoIdentidad
-            datos={datos}
-            onChange={actualizarDatos}
-            onSiguiente={siguiente}
-          />
+          <PasoIdentidad datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} />
         )}
         {paso === 1 && (
-          <PasoBonus
-            datos={datos}
-            onChange={actualizarDatos}
-            onSiguiente={siguiente}
-            onAnterior={anterior}
-          />
+          <PasoBonus datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} onAnterior={anterior} />
         )}
         {paso === 2 && (
-          <PasoGrupos
-            datos={datos}
-            partidos={partidos}
-            onChange={actualizarDatos}
-            onSiguiente={siguiente}
-            onAnterior={anterior}
-          />
+          <PasoGrupos datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} onAnterior={anterior} />
         )}
         {paso === 3 && (
-          <PasoEliminatorias
-            datos={datos}
-            onChange={actualizarDatos}
-            onSiguiente={siguiente}
-            onAnterior={anterior}
-          />
+          <PasoEliminatorias datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} onAnterior={anterior} />
         )}
         {paso === 4 && (
           <PasoResumen
             datos={datos}
-            partidos={partidos}
+            totalPartidos={PARTIDOS_GRUPOS.length}
             onEnviar={enviarProde}
             onAnterior={anterior}
             enviando={enviando}

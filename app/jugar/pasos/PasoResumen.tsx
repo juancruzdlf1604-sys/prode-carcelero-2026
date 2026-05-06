@@ -1,19 +1,18 @@
 'use client'
 
 import type { DatosProde } from '../FormularioProde'
-import type { Partido } from '@/lib/types'
 
 interface Props {
   datos: DatosProde
-  partidos: Partido[]
+  totalPartidos: number
   onEnviar: () => void
   onAnterior: () => void
   enviando: boolean
   error: string
 }
 
-export default function PasoResumen({ datos, partidos, onEnviar, onAnterior, enviando, error }: Props) {
-  const completados = partidos.filter(p => datos.pronosticos[p.id] !== undefined).length
+export default function PasoResumen({ datos, totalPartidos, onEnviar, onAnterior, enviando, error }: Props) {
+  const completados = Object.keys(datos.pronosticos).length
 
   return (
     <div className="space-y-4">
@@ -53,9 +52,9 @@ export default function PasoResumen({ datos, partidos, onEnviar, onAnterior, env
       <div className="bg-naval rounded-xl border border-azul/30 p-4">
         <h3 className="text-dorado font-bold text-sm uppercase tracking-wider mb-2">⚽ Fase de Grupos</h3>
         <p className="text-white/50 text-sm">
-          {completados}/{partidos.length} partidos completados
-          {completados < partidos.length && (
-            <span className="text-yellow-400 ml-2">⚠️ {partidos.length - completados} sin completar (se guardan como 0-0)</span>
+          {completados}/{totalPartidos} partidos completados
+          {completados < totalPartidos && (
+            <span className="text-yellow-400 ml-2">⚠️ {totalPartidos - completados} sin completar (se guardan como 0-0)</span>
           )}
         </p>
       </div>

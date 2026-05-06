@@ -55,13 +55,16 @@ export default function PasoBonus({ datos, onChange, onSiguiente, onAnterior }: 
                 <span className="ml-auto text-dorado font-bold">{b.puntos} pts</span>
               </label>
               {b.esJugador ? (
-                <input
-                  type="text"
-                  value={(datos.bonus as Record<string, string>)[b.key] || ''}
-                  onChange={e => updateBonus(b.key, e.target.value)}
-                  placeholder="Nombre del jugador"
-                  className="w-full bg-oscuro border border-azul/50 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-dorado transition-colors placeholder:text-white/30"
-                />
+                <>
+                  <input
+                    type="text"
+                    value={(datos.bonus as Record<string, string>)[b.key] || ''}
+                    onChange={e => updateBonus(b.key, e.target.value)}
+                    placeholder="Apellido del jugador"
+                    className="w-full bg-oscuro border border-azul/50 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-dorado transition-colors placeholder:text-white/30"
+                  />
+                  <p className="text-white/30 text-xs mt-1">Escribir solo el apellido. Ej: Messi</p>
+                </>
               ) : (
                 <select
                   value={(datos.bonus as Record<string, string>)[b.key] || ''}
