@@ -894,39 +894,44 @@ function TabSync() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-black text-white">Sincronización de Resultados</h2>
-        <p className="text-white/50 text-sm">
-          Actualiza los resultados desde football-data.org. Se ejecuta automáticamente cada 30 minutos.
+        <h2 className="text-lg font-black text-white">🔄 Sincronización de Resultados</h2>
+        <p className="text-white/50 text-sm mt-1">
+          Actualiza los resultados desde football-data.org manualmente.
         </p>
       </div>
 
-      {/* Estado */}
-      <div className="bg-naval rounded-xl border border-azul/20 px-4 py-3 flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="text-white/40 text-xs mb-0.5">Última sincronización</div>
-          <div className="text-white font-semibold text-sm">
-            {ultimaSync ? tiempoDesde(ultimaSync) : 'Nunca'}
-          </div>
-          {ultimaSync && (
-            <div className="text-white/30 text-xs">
-              {new Date(ultimaSync).toLocaleString('es-AR')}
-            </div>
-          )}
+      {/* Botón principal — grande y prominente */}
+      <button
+        onClick={sincronizar}
+        disabled={sincronizando}
+        className="w-full bg-dorado text-oscuro font-black py-5 px-6 rounded-2xl hover:bg-yellow-400 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-wait text-xl shadow-lg shadow-dorado/20"
+      >
+        {sincronizando
+          ? <span className="flex items-center justify-center gap-3">
+              <span className="inline-block animate-spin">⏳</span>
+              Sincronizando...
+            </span>
+          : '🔄 Sincronizar resultados ahora'}
+      </button>
+
+      {/* Última sync */}
+      <div className="bg-naval rounded-xl border border-azul/20 px-4 py-3">
+        <div className="text-white/40 text-xs mb-0.5">Última sincronización</div>
+        <div className="text-white font-semibold">
+          {ultimaSync ? tiempoDesde(ultimaSync) : 'Nunca sincronizado'}
         </div>
-        <button
-          onClick={sincronizar}
-          disabled={sincronizando}
-          className="bg-dorado text-oscuro font-black px-5 py-2.5 rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-wait text-sm"
-        >
-          {sincronizando ? '⏳ Sincronizando...' : '🔄 Sincronizar ahora'}
-        </button>
+        {ultimaSync && (
+          <div className="text-white/30 text-xs mt-0.5">
+            {new Date(ultimaSync).toLocaleString('es-AR')}
+          </div>
+        )}
       </div>
 
       {errorSync && (
         <div className="bg-red-900/30 border border-red-500/50 rounded-xl px-4 py-3 text-red-300 text-sm">
-          {errorSync}
+          ⚠️ {errorSync}
         </div>
       )}
 
@@ -990,12 +995,12 @@ function TabSync() {
         </div>
       )}
 
-      {/* Nota sobre cron */}
+      {/* Nota informativa */}
       <div className="bg-azul/10 border border-azul/30 rounded-xl px-4 py-3 text-xs text-white/50 space-y-1">
-        <p className="font-semibold text-white/70">ℹ️ Sincronización automática</p>
-        <p>Configurada en <code className="text-dorado/70">vercel.json</code> para ejecutarse cada 30 minutos.</p>
-        <p>Requiere plan Pro de Vercel para crons más frecuentes que diarios.</p>
-        <p>La API <code className="text-dorado/70">football-data.org</code> tiene límite de 10 req/min en el plan gratuito.</p>
+        <p className="font-semibold text-white/70">ℹ️ Cómo funciona</p>
+        <p>Consulta la API de <code className="text-dorado/70">football-data.org</code> y actualiza los resultados de los partidos finalizados.</p>
+        <p>El plan gratuito de la API permite hasta 10 consultas por minuto — suficiente para uso manual.</p>
+        <p>Recomendado: sincronizar después de cada jornada de partidos.</p>
       </div>
     </div>
   )
