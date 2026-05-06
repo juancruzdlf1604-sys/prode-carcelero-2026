@@ -18,6 +18,12 @@ const TOTAL = PARTIDOS_GRUPOS.length
 export default function PasoGrupos({ datos, onChange, onSiguiente, onAnterior }: Props) {
   const [grupoActual, setGrupoActual] = useState('A')
   const [error, setError] = useState('')
+  const [guardado, setGuardado] = useState(false)
+
+  const guardar = () => {
+    setGuardado(true)
+    setTimeout(() => setGuardado(false), 2000)
+  }
 
   const completados = useMemo(
     () => PARTIDOS_GRUPOS.filter(p => datos.pronosticos[p.id] !== undefined).length,
@@ -158,6 +164,18 @@ export default function PasoGrupos({ datos, onChange, onSiguiente, onAnterior }:
           {error}
         </div>
       )}
+
+      {/* Guardar progreso */}
+      <button
+        onClick={guardar}
+        className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+          guardado
+            ? 'bg-green-900/30 border-green-500/50 text-green-400'
+            : 'border-azul/40 text-white/50 hover:bg-azul/10'
+        }`}
+      >
+        {guardado ? '✓ Progreso guardado' : '💾 Guardar progreso'}
+      </button>
 
       {/* Navegación entre grupos */}
       <div className="flex gap-2">

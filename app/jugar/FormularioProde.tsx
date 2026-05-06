@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Stepper from '@/components/ui/Stepper'
 import PasoIdentidad from './pasos/PasoIdentidad'
@@ -34,7 +34,7 @@ export interface DatosProde {
   }>
 }
 
-const PASOS = ['Datos', 'Bonus', 'Grupos', 'Eliminatorias', 'Resumen']
+const PASOS = ['Datos', 'Grupos', 'Eliminatorias', 'Bonus', 'Resumen']
 
 const datosIniciales: DatosProde = {
   nombre: '',
@@ -51,6 +51,23 @@ export default function FormularioProde() {
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('prode-carcelero-2026')
+      if (saved) {
+        const { datos: d, paso: p } = JSON.parse(saved)
+        if (d) setDatos(d)
+        if (typeof p === 'number') setPaso(p)
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('prode-carcelero-2026', JSON.stringify({ datos, paso }))
+    } catch {}
+  }, [datos, paso])
 
   const siguiente = () => setPaso(p => Math.min(p + 1, PASOS.length - 1))
   const anterior = () => setPaso(p => Math.max(p - 1, 0))
@@ -106,6 +123,7 @@ export default function FormularioProde() {
         await supabase.from('pronosticos_eliminatorias').insert(pronosticosElim)
       }
 
+      localStorage.removeItem('prode-carcelero-2026')
       router.push(`/mi-prode/${codigo}`)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error al enviar. Intentá de nuevo.')
@@ -130,13 +148,13 @@ export default function FormularioProde() {
           <PasoIdentidad datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} />
         )}
         {paso === 1 && (
-          <PasoBonus datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} onAnterior={anterior} />
-        )}
-        {paso === 2 && (
           <PasoGrupos datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} onAnterior={anterior} />
         )}
-        {paso === 3 && (
+        {paso === 2 && (
           <PasoEliminatorias datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} onAnterior={anterior} />
+        )}
+        {paso === 3 && (
+          <PasoBonus datos={datos} onChange={actualizarDatos} onSiguiente={siguiente} onAnterior={anterior} />
         )}
         {paso === 4 && (
           <PasoResumen

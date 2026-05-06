@@ -63,8 +63,8 @@ function resolveTeam(
 
 export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnterior }: Props) {
   const [faseIdx, setFaseIdx] = useState(0)
+  const [guardado, setGuardado] = useState(false)
 
-  // Compute group standings from user's group predictions
   const clasificaciones = useMemo(() => {
     const raw = calcularClasificacion(datos.pronosticos)
     const result: Record<string, string[]> = {}
@@ -81,19 +81,27 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
 
   const elim = datos.eliminatorias as Record<string, ElimEntry>
 
-  const updateElim = (fase: string, slot: number, campo: string, valor: string | number) => {
+  // Always store resolved team names so getWinner can cascade to the next round
+  const updateElim = (fase: string, slot: number, campo: string, valor: string | number, tlResolved?: string, tvResolved?: string) => {
     const key = `${fase}_${slot}`
     const prev = elim[key] ?? { fase, slot, equipo_local: '', equipo_visitante: '', goles_local: 0, goles_visitante: 0 }
-    const updated = { ...prev, [campo]: valor }
+    const updated: ElimEntry = { ...prev, [campo]: valor }
 
-    // If score changes and is no longer tied, clear ganador
-    if ((campo === 'goles_local' || campo === 'goles_visitante')) {
+    if (tlResolved) updated.equipo_local = tlResolved
+    if (tvResolved) updated.equipo_visitante = tvResolved
+
+    if (campo === 'goles_local' || campo === 'goles_visitante') {
       const gl = campo === 'goles_local' ? (valor as number) : prev.goles_local
       const gv = campo === 'goles_visitante' ? (valor as number) : prev.goles_visitante
       if (gl !== gv) delete updated.ganador
     }
 
     onChange({ eliminatorias: { ...elim, [key]: updated } })
+  }
+
+  const guardar = () => {
+    setGuardado(true)
+    setTimeout(() => setGuardado(false), 2000)
   }
 
   const fase = FASES[faseIdx]
@@ -106,7 +114,6 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
     const tl = resolveTeam(b.l, clasificaciones, best3rds, elim)
     const tv = resolveTeam(b.v, clasificaciones, best3rds, elim)
     if (!tl || !tv) return false
-    // Must have a determined winner (no tie without ganador)
     return getWinner(e) !== ''
   }).length
 
@@ -159,8 +166,8 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
             const tv = resolveTeam(b.v, clasificaciones, best3rds, elim)
             const gl = e.goles_local ?? 0
             const gv = e.goles_visitante ?? 0
-            const empate = tl && tv && gl === gv
-            const winner = getWinner(e)
+            const empate = !!(tl && tv && gl === gv)
+            const winner = getWinner({ ...e, equipo_local: tl || e.equipo_local, equipo_visitante: tv || e.equipo_visitante })
 
             return (
               <div key={b.slot} className="px-4 py-4">
@@ -191,7 +198,7 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
                           inputMode="numeric"
                           min={0} max={99}
                           value={gl}
-                          onChange={ev => updateElim(fase.key, b.slot, 'goles_local', Math.max(0, parseInt(ev.target.value) || 0))}
+                          onChange={ev => updateElim(fase.key, b.slot, 'goles_local', Math.max(0, parseInt(ev.target.value) || 0), tl, tv)}
                           onFocus={ev => ev.target.select()}
                           className="w-12 h-10 text-center text-lg font-bold bg-oscuro border-2 border-azul/50 focus:border-dorado text-white rounded-lg outline-none transition-colors"
                         />
@@ -203,7 +210,7 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
                           inputMode="numeric"
                           min={0} max={99}
                           value={gv}
-                          onChange={ev => updateElim(fase.key, b.slot, 'goles_visitante', Math.max(0, parseInt(ev.target.value) || 0))}
+                          onChange={ev => updateElim(fase.key, b.slot, 'goles_visitante', Math.max(0, parseInt(ev.target.value) || 0), tl, tv)}
                           onFocus={ev => ev.target.select()}
                           className="w-12 h-10 text-center text-lg font-bold bg-oscuro border-2 border-azul/50 focus:border-dorado text-white rounded-lg outline-none transition-colors"
                         />
@@ -219,13 +226,13 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
                         <p className="text-dorado text-xs font-semibold mb-2">⚡ Empate — ¿Quién avanza en penales?</p>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => updateElim(fase.key, b.slot, 'ganador', tl)}
+                            onClick={() => updateElim(fase.key, b.slot, 'ganador', tl, tl, tv)}
                             className="flex-1 py-2 text-xs font-bold rounded-lg bg-azul/40 text-white hover:bg-azul transition-colors"
                           >
                             {BANDERAS[tl] || ''} {tl}
                           </button>
                           <button
-                            onClick={() => updateElim(fase.key, b.slot, 'ganador', tv)}
+                            onClick={() => updateElim(fase.key, b.slot, 'ganador', tv, tl, tv)}
                             className="flex-1 py-2 text-xs font-bold rounded-lg bg-azul/40 text-white hover:bg-azul transition-colors"
                           >
                             {BANDERAS[tv] || ''} {tv}
@@ -237,7 +244,7 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
                       <div className="mt-2 flex items-center justify-between">
                         <p className="text-white/40 text-xs">Avanza por penales: <span className="text-dorado">{winner}</span></p>
                         <button
-                          onClick={() => updateElim(fase.key, b.slot, 'ganador', '')}
+                          onClick={() => updateElim(fase.key, b.slot, 'ganador', '', tl, tv)}
                           className="text-white/30 text-xs hover:text-white/60"
                         >
                           cambiar
@@ -251,6 +258,18 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
           })}
         </div>
       </div>
+
+      {/* Guardar progreso */}
+      <button
+        onClick={guardar}
+        className={`w-full py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+          guardado
+            ? 'bg-green-900/30 border-green-500/50 text-green-400'
+            : 'border-azul/40 text-white/50 hover:bg-azul/10'
+        }`}
+      >
+        {guardado ? '✓ Progreso guardado' : '💾 Guardar progreso'}
+      </button>
 
       {/* Navegación entre fases */}
       <div className="flex gap-2">
@@ -274,7 +293,7 @@ export default function PasoEliminatorias({ datos, onChange, onSiguiente, onAnte
             onClick={onSiguiente}
             className="flex-1 bg-dorado text-oscuro font-black py-3 rounded-xl hover:bg-yellow-400 transition-colors active:scale-95"
           >
-            Revisar y enviar →
+            Bonus y revisar →
           </button>
         )}
       </div>

@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
-import { Menu, X, Trophy, List } from 'lucide-react'
+import { Menu, X, Trophy, List, Gift, Calendar } from 'lucide-react'
 
 export default function Header() {
   const [open, setOpen] = useState(false)
@@ -21,6 +21,8 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-1">
+          <NavLink href="/prode" icon={<Calendar size={14} />}>Prode</NavLink>
+          <NavLink href="/premios" icon={<Gift size={14} />}>Premios</NavLink>
           <NavLink href="/tabla" icon={<Trophy size={14} />}>Tabla</NavLink>
           <NavLink href="/jugar" icon={<List size={14} />}>Jugá</NavLink>
         </nav>
@@ -34,6 +36,8 @@ export default function Header() {
       {/* Mobile nav */}
       {open && (
         <div className="sm:hidden bg-oscuro border-t border-azul/30 px-4 py-3 flex flex-col gap-2">
+          <MobileNavLink href="/prode" onClick={() => setOpen(false)}>📅 Fixture del Mundial</MobileNavLink>
+          <MobileNavLink href="/premios" onClick={() => setOpen(false)}>🎁 Premios</MobileNavLink>
           <MobileNavLink href="/tabla" onClick={() => setOpen(false)}>🏆 Tabla de posiciones</MobileNavLink>
           <MobileNavLink href="/jugar" onClick={() => setOpen(false)}>⚽ Hacé tu prode</MobileNavLink>
         </div>
