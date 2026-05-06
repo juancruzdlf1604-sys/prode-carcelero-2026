@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import { calcularPuntosGrupo, calcularPuntosBonus } from '@/lib/puntos'
 import type { Participante, Partido, Configuracion, Bonus, ResultadosBonus } from '@/lib/types'
 
-type TabType = 'participantes' | 'partidos' | 'tabla' | 'bonus' | 'premios' | 'config'
+type TabType = 'participantes' | 'partidos' | 'tabla' | 'bonus' | 'premios' | 'sync' | 'config'
 
 export default function AdminPanel() {
   const [autenticado, setAutenticado] = useState(false)
@@ -79,6 +79,7 @@ export default function AdminPanel() {
     { key: 'tabla', label: '🏆 Tabla' },
     { key: 'bonus', label: '🎯 Bonus' },
     { key: 'premios', label: '🎁 Premios' },
+    { key: 'sync', label: '🔄 Sync' },
     { key: 'config', label: '⚙️ Config' },
   ]
 
@@ -139,6 +140,7 @@ export default function AdminPanel() {
         {tab === 'tabla' && <TabTabla />}
         {tab === 'bonus' && <TabBonus />}
         {tab === 'premios' && <TabPremios />}
+        {tab === 'sync' && <TabSync />}
         {tab === 'config' && <TabConfig />}
       </div>
     </div>
@@ -819,6 +821,182 @@ function TabPremios() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Tab Sync ─────────────────────────────────────────────────────────────────
+
+interface SyncResumen {
+  actualizados: Array<{ id: number; partido: string; resultado: string }>
+  errores: string[]
+  sinCambios: number
+  totalPartidosAPI?: number
+  finalizadosAPI?: number
+}
+
+function TabSync() {
+  const [sincronizando, setSincronizando] = useState(false)
+  const [ultimaSync, setUltimaSync] = useState<string>('')
+  const [resumen, setResumen] = useState<SyncResumen | null>(null)
+  const [errorSync, setErrorSync] = useState('')
+
+  const cargarEstado = useCallback(async () => {
+    const { data } = await supabase
+      .from('configuracion')
+      .select('clave, valor')
+      .in('clave', ['ultima_sincronizacion', 'ultima_sync_resumen'])
+
+    data?.forEach(r => {
+      if (r.clave === 'ultima_sincronizacion') setUltimaSync(r.valor)
+      if (r.clave === 'ultima_sync_resumen' && r.valor) {
+        try { setResumen(JSON.parse(r.valor)) } catch {}
+      }
+    })
+  }, [])
+
+  useEffect(() => { cargarEstado() }, [cargarEstado])
+
+  const sincronizar = async () => {
+    setSincronizando(true)
+    setErrorSync('')
+    try {
+      const res = await fetch('/api/sync-resultados', {
+        headers: { 'x-admin-password': 'carcelero2026' },
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setErrorSync(json.error || `Error ${res.status}`)
+      } else {
+        setResumen({
+          actualizados: json.actualizados,
+          errores: json.errores,
+          sinCambios: json.sinCambios,
+          totalPartidosAPI: json.totalPartidosAPI,
+          finalizadosAPI: json.finalizadosAPI,
+        })
+        setUltimaSync(json.timestamp)
+      }
+    } catch (e) {
+      setErrorSync(e instanceof Error ? e.message : 'Error de red')
+    }
+    setSincronizando(false)
+  }
+
+  const tiempoDesde = (iso: string) => {
+    if (!iso) return null
+    const diff = Date.now() - new Date(iso).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'hace menos de un minuto'
+    if (mins < 60) return `hace ${mins} minuto${mins !== 1 ? 's' : ''}`
+    const hrs = Math.floor(mins / 60)
+    return `hace ${hrs} hora${hrs !== 1 ? 's' : ''}`
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-black text-white">Sincronización de Resultados</h2>
+        <p className="text-white/50 text-sm">
+          Actualiza los resultados desde football-data.org. Se ejecuta automáticamente cada 30 minutos.
+        </p>
+      </div>
+
+      {/* Estado */}
+      <div className="bg-naval rounded-xl border border-azul/20 px-4 py-3 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="text-white/40 text-xs mb-0.5">Última sincronización</div>
+          <div className="text-white font-semibold text-sm">
+            {ultimaSync ? tiempoDesde(ultimaSync) : 'Nunca'}
+          </div>
+          {ultimaSync && (
+            <div className="text-white/30 text-xs">
+              {new Date(ultimaSync).toLocaleString('es-AR')}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={sincronizar}
+          disabled={sincronizando}
+          className="bg-dorado text-oscuro font-black px-5 py-2.5 rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-wait text-sm"
+        >
+          {sincronizando ? '⏳ Sincronizando...' : '🔄 Sincronizar ahora'}
+        </button>
+      </div>
+
+      {errorSync && (
+        <div className="bg-red-900/30 border border-red-500/50 rounded-xl px-4 py-3 text-red-300 text-sm">
+          {errorSync}
+        </div>
+      )}
+
+      {/* Resumen última sync */}
+      {resumen && (
+        <div className="space-y-3">
+          {/* Métricas */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-naval rounded-xl border border-azul/20 p-3 text-center">
+              <div className="text-green-400 font-black text-xl">{resumen.actualizados.length}</div>
+              <div className="text-white/40 text-xs">Actualizados</div>
+            </div>
+            <div className="bg-naval rounded-xl border border-azul/20 p-3 text-center">
+              <div className="text-white/60 font-black text-xl">{resumen.sinCambios}</div>
+              <div className="text-white/40 text-xs">Sin cambios</div>
+            </div>
+            <div className="bg-naval rounded-xl border border-azul/20 p-3 text-center">
+              <div className={`font-black text-xl ${resumen.errores.length > 0 ? 'text-red-400' : 'text-white/30'}`}>
+                {resumen.errores.length}
+              </div>
+              <div className="text-white/40 text-xs">Errores</div>
+            </div>
+          </div>
+
+          {/* Partidos actualizados */}
+          {resumen.actualizados.length > 0 && (
+            <div>
+              <h3 className="text-dorado text-xs font-bold uppercase tracking-wider mb-2">
+                Partidos actualizados
+              </h3>
+              <div className="space-y-1.5">
+                {resumen.actualizados.map(a => (
+                  <div key={a.id} className="bg-naval rounded-lg border border-green-800/30 px-3 py-2 flex items-center justify-between text-sm">
+                    <span className="text-white/80">{a.partido}</span>
+                    <span className="text-green-400 font-black ml-3">{a.resultado}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Errores */}
+          {resumen.errores.length > 0 && (
+            <div>
+              <h3 className="text-red-400/70 text-xs font-bold uppercase tracking-wider mb-2">
+                Errores de mapeo
+              </h3>
+              <div className="bg-red-900/20 border border-red-700/30 rounded-xl px-3 py-2 space-y-1">
+                {resumen.errores.map((e, i) => (
+                  <div key={i} className="text-red-300/70 text-xs">{e}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {resumen.actualizados.length === 0 && resumen.errores.length === 0 && (
+            <div className="text-center py-4 text-white/30 text-sm">
+              Todo actualizado · No hay cambios nuevos
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Nota sobre cron */}
+      <div className="bg-azul/10 border border-azul/30 rounded-xl px-4 py-3 text-xs text-white/50 space-y-1">
+        <p className="font-semibold text-white/70">ℹ️ Sincronización automática</p>
+        <p>Configurada en <code className="text-dorado/70">vercel.json</code> para ejecutarse cada 30 minutos.</p>
+        <p>Requiere plan Pro de Vercel para crons más frecuentes que diarios.</p>
+        <p>La API <code className="text-dorado/70">football-data.org</code> tiene límite de 10 req/min en el plan gratuito.</p>
+      </div>
     </div>
   )
 }

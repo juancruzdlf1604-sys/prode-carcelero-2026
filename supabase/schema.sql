@@ -38,7 +38,9 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
   ('alias_pago',         'ALIAS.CLUB.SANCARLOS', 'Alias CBU para transferencias'),
   ('cbu_pago',           '0000000000000000000000', 'CBU para transferencias'),
   ('whatsapp_admin',     '5491100000000', 'WhatsApp del organizador (con código de país)'),
-  ('prode_abierto',      'true', 'Si el prode acepta nuevas inscripciones')
+  ('prode_abierto',      'true', 'Si el prode acepta nuevas inscripciones'),
+  ('ultima_sincronizacion', '', 'Timestamp de la última sincronización automática'),
+  ('ultima_sync_resumen',   '', 'JSON con el resultado de la última sincronización')
 ON CONFLICT (clave) DO NOTHING;
 
 -- ============================================================
@@ -93,6 +95,7 @@ CREATE TABLE IF NOT EXISTS partidos (
   goles_visitante_real INTEGER,
   fecha TIMESTAMPTZ,
   jugado BOOLEAN DEFAULT FALSE,
+  status TEXT DEFAULT 'SCHEDULED',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -378,3 +381,36 @@ BEGIN
   RETURN total;
 END;
 $$ LANGUAGE plpgsql;
+
+-- ============================================================
+-- SEGURIDAD — Columnas sensibles de participantes
+-- Restricción: anon solo puede ver nombre y código.
+-- apellido y whatsapp solo accesibles via service_role.
+-- ============================================================
+
+-- Vista pública segura (usa el anon key)
+CREATE OR REPLACE VIEW participantes_publico AS
+SELECT
+  id,
+  codigo,
+  nombre,
+  pago_confirmado,
+  created_at
+FROM participantes;
+
+-- Habilitar RLS en la vista no aplica, pero sí en la tabla base.
+-- Con el grant de abajo, anon lee solo las columnas de la vista.
+GRANT SELECT ON participantes_publico TO anon, authenticated;
+
+-- OPCIONAL: Para máxima seguridad, restringir la tabla base también.
+-- Esto requiere actualizar todas las queries del admin para usar service_role.
+-- Descomentá estas líneas solo si el admin usa service_role key:
+-- REVOKE SELECT ON TABLE participantes FROM anon, authenticated;
+-- GRANT SELECT (id, codigo, nombre, pago_confirmado, created_at) ON TABLE participantes TO anon, authenticated;
+
+-- ============================================================
+-- STATUS de partidos: columna necesaria para sincronización en vivo
+-- Si ejecutás esto sobre una DB existente (no recién creada),
+-- corrés este ALTER por separado:
+-- ALTER TABLE partidos ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'SCHEDULED';
+-- ============================================================
