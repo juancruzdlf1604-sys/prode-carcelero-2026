@@ -10,7 +10,6 @@ interface EntradaTabla {
   codigo: string
   nombre: string
   apellido: string
-  pago_confirmado: boolean
   puntos: number
   exactos: number
 }
@@ -19,7 +18,6 @@ export default function TablaCliente() {
   const [tabla, setTabla] = useState<EntradaTabla[]>([])
   const [loading, setLoading] = useState(true)
   const [ultimaActualizacion, setUltimaActualizacion] = useState<Date | null>(null)
-  const [soloPagados, setSoloPagados] = useState(false)
 
   const calcular = async () => {
     const [
@@ -29,7 +27,7 @@ export default function TablaCliente() {
       { data: bonuses },
       { data: resultBonus },
     ] = await Promise.all([
-      supabase.from('participantes').select('id, codigo, nombre, apellido, pago_confirmado'),
+      supabase.from('participantes').select('id, codigo, nombre, apellido').eq('pago_confirmado', true),
       supabase.from('pronosticos_grupos').select('participante_id, partido_id, goles_local, goles_visitante'),
       supabase.from('partidos').select('id, goles_local_real, goles_visitante_real, jugado').eq('jugado', true),
       supabase.from('bonus').select('*'),
@@ -38,12 +36,10 @@ export default function TablaCliente() {
 
     if (!participantes) return
 
-    // Mapa de partidos jugados
     const partidosMap = new Map(
       (partidos || []).map(p => [p.id, p])
     )
 
-    // Mapa de pronósticos por participante
     const pronMap = new Map<string, Array<{ partido_id: number; goles_local: number; goles_visitante: number }>>()
     pronosticosGrupos?.forEach(pg => {
       const arr = pronMap.get(pg.participante_id) || []
@@ -51,7 +47,6 @@ export default function TablaCliente() {
       pronMap.set(pg.participante_id, arr)
     })
 
-    // Mapa de bonus por participante
     const bonusMap = new Map<string, Bonus>()
     bonuses?.forEach(b => bonusMap.set(b.participante_id, b))
 
@@ -61,7 +56,6 @@ export default function TablaCliente() {
       let puntos = 0
       let exactos = 0
 
-      // Puntos grupos
       const prons = pronMap.get(p.id) || []
       prons.forEach(pg => {
         const partido = partidosMap.get(pg.partido_id)
@@ -74,25 +68,15 @@ export default function TablaCliente() {
         if (pts === 10) exactos++
       })
 
-      // Puntos bonus
       const bonus = bonusMap.get(p.id)
       if (bonus && rb) {
         puntos += calcularPuntosBonus(bonus, rb)
       }
 
-      return {
-        codigo: p.codigo,
-        nombre: p.nombre,
-        apellido: p.apellido,
-        pago_confirmado: p.pago_confirmado,
-        puntos,
-        exactos,
-      }
+      return { codigo: p.codigo, nombre: p.nombre, apellido: p.apellido, puntos, exactos }
     })
 
-    // Ordenar: más puntos primero, desempate por exactos
     nuevaTabla.sort((a, b) => b.puntos - a.puntos || b.exactos - a.exactos)
-
     setTabla(nuevaTabla)
     setUltimaActualizacion(new Date())
     setLoading(false)
@@ -101,7 +85,6 @@ export default function TablaCliente() {
   useEffect(() => {
     calcular()
 
-    // Realtime: recalcular cuando cambien partidos o participantes
     const channel = supabase
       .channel('tabla-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, calcular)
@@ -111,31 +94,16 @@ export default function TablaCliente() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  const visibles = soloPagados ? tabla.filter(e => e.pago_confirmado) : tabla
-
   return (
     <div className="max-w-2xl mx-auto w-full px-4 py-6 space-y-4">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-black text-dorado">🏆 Tabla de Posiciones</h1>
-          <p className="text-white/40 text-xs mt-0.5">
-            {ultimaActualizacion
-              ? `Actualizado ${ultimaActualizacion.toLocaleTimeString('es-AR')}`
-              : 'Actualizando...'}
-            {' '}· Tiempo real
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-white/50 text-xs flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={soloPagados}
-              onChange={e => setSoloPagados(e.target.checked)}
-              className="accent-dorado"
-            />
-            Solo pagados
-          </label>
-        </div>
+      <div>
+        <h1 className="text-2xl font-black text-dorado">🏆 Tabla de Posiciones</h1>
+        <p className="text-white/40 text-xs mt-0.5">
+          {ultimaActualizacion
+            ? `Actualizado ${ultimaActualizacion.toLocaleTimeString('es-AR')}`
+            : 'Actualizando...'}
+          {' '}· Tiempo real
+        </p>
       </div>
 
       {loading ? (
@@ -143,17 +111,17 @@ export default function TablaCliente() {
           <div className="text-3xl mb-2">⏳</div>
           <p>Calculando posiciones...</p>
         </div>
-      ) : visibles.length === 0 ? (
+      ) : tabla.length === 0 ? (
         <div className="text-center py-12 text-white/30">
           <div className="text-4xl mb-3">⚽</div>
-          <p>Todavía no hay participantes</p>
+          <p>Todavía no hay participantes con pago confirmado</p>
           <Link href="/jugar" className="text-dorado text-sm underline mt-2 inline-block">
-            ¡Sé el primero!
+            ¡Hacé tu prode!
           </Link>
         </div>
       ) : (
         <div className="space-y-2">
-          {visibles.map((entrada, i) => (
+          {tabla.map((entrada, i) => (
             <EntradaFila key={entrada.codigo} entrada={entrada} posicion={i + 1} />
           ))}
         </div>
@@ -181,12 +149,7 @@ function EntradaFila({ entrada, posicion }: { entrada: EntradaTabla; posicion: n
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-white truncate">{entrada.nombre} {entrada.apellido}</span>
-            {!entrada.pago_confirmado && (
-              <span className="text-yellow-400/60 text-xs">⏳</span>
-            )}
-          </div>
+          <p className="font-bold text-white truncate">{entrada.nombre} {entrada.apellido}</p>
           <div className="flex items-center gap-2 text-xs text-white/40 mt-0.5">
             <span>{entrada.codigo}</span>
             <span>·</span>

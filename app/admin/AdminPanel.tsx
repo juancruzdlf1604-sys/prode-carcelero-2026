@@ -11,6 +11,7 @@ type TabType = 'participantes' | 'partidos' | 'tabla' | 'bonus' | 'premios' | 's
 export default function AdminPanel() {
   const [autenticado, setAutenticado] = useState(false)
   const [password, setPassword] = useState('')
+  const [adminPass, setAdminPass] = useState('')
   const [errorLogin, setErrorLogin] = useState('')
   const [tab, setTab] = useState<TabType>('participantes')
   const [stats, setStats] = useState({ total: 0, confirmados: 0, precio: 30000 })
@@ -18,6 +19,7 @@ export default function AdminPanel() {
   const login = () => {
     if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD || password === 'carcelero2026') {
       setAutenticado(true)
+      setAdminPass(password)
     } else {
       setErrorLogin('Contraseña incorrecta')
     }
@@ -135,13 +137,13 @@ export default function AdminPanel() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
-        {tab === 'participantes' && <TabParticipantes onStatsChange={cargarStats} />}
-        {tab === 'partidos' && <TabPartidos />}
+        {tab === 'participantes' && <TabParticipantes adminPass={adminPass} onStatsChange={cargarStats} />}
+        {tab === 'partidos' && <TabPartidos adminPass={adminPass} />}
         {tab === 'tabla' && <TabTabla />}
-        {tab === 'bonus' && <TabBonus />}
-        {tab === 'premios' && <TabPremios />}
+        {tab === 'bonus' && <TabBonus adminPass={adminPass} />}
+        {tab === 'premios' && <TabPremios adminPass={adminPass} />}
         {tab === 'sync' && <TabSync />}
-        {tab === 'config' && <TabConfig />}
+        {tab === 'config' && <TabConfig adminPass={adminPass} />}
       </div>
     </div>
   )
@@ -162,7 +164,7 @@ function StatCard({
 
 // ─── Tab Participantes ────────────────────────────────────────────────────────
 
-function TabParticipantes({ onStatsChange }: { onStatsChange: () => void }) {
+function TabParticipantes({ adminPass, onStatsChange }: { adminPass: string; onStatsChange: () => void }) {
   const [participantes, setParticipantes] = useState<Participante[]>([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState('')
@@ -181,15 +183,25 @@ function TabParticipantes({ onStatsChange }: { onStatsChange: () => void }) {
 
   useEffect(() => { cargar() }, [cargar])
 
+  const adminHeaders = { 'Content-Type': 'application/json', 'x-admin-password': adminPass }
+
   const togglePago = async (id: string, actual: boolean) => {
-    await supabase.from('participantes').update({ pago_confirmado: !actual }).eq('id', id)
+    await fetch('/api/admin/participantes', {
+      method: 'PATCH',
+      headers: adminHeaders,
+      body: JSON.stringify({ id, pago_confirmado: !actual }),
+    })
     cargar()
     onStatsChange()
   }
 
   const eliminar = async (id: string) => {
     setEliminando(true)
-    await supabase.from('participantes').delete().eq('id', id)
+    await fetch('/api/admin/participantes', {
+      method: 'DELETE',
+      headers: adminHeaders,
+      body: JSON.stringify({ id }),
+    })
     setConfirmandoEliminar(null)
     setEliminando(false)
     cargar()
@@ -333,12 +345,13 @@ function TabParticipantes({ onStatsChange }: { onStatsChange: () => void }) {
 
 // ─── Tab Partidos ─────────────────────────────────────────────────────────────
 
-function TabPartidos() {
+function TabPartidos({ adminPass }: { adminPass: string }) {
   const [partidos, setPartidos] = useState<Partido[]>([])
   const [loading, setLoading] = useState(true)
   const [editando, setEditando] = useState<number | null>(null)
   const [resultados, setResultados] = useState<Record<number, { local: string; visitante: string }>>({})
   const [guardando, setGuardando] = useState<number | null>(null)
+  const [errorPartido, setErrorPartido] = useState<Record<number, string>>({})  // eslint-disable-line @typescript-eslint/no-unused-vars
   const [faseTab, setFaseTab] = useState('grupos')
 
   useEffect(() => {
@@ -357,11 +370,18 @@ function TabPartidos() {
     if (isNaN(local) || isNaN(visitante)) return
 
     setGuardando(partido.id)
-    await supabase.from('partidos').update({
-      goles_local_real: local,
-      goles_visitante_real: visitante,
-      jugado: true,
-    }).eq('id', partido.id)
+    const res = await fetch('/api/admin/partidos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPass },
+      body: JSON.stringify({ id: partido.id, goles_local_real: local, goles_visitante_real: visitante }),
+    })
+
+    if (!res.ok) {
+      const json = await res.json()
+      setErrorPartido(prev => ({ ...prev, [partido.id]: json.error }))
+      setGuardando(null)
+      return
+    }
 
     setPartidos(prev => prev.map(p =>
       p.id === partido.id
@@ -653,12 +673,13 @@ function TabTabla() {
 
 // ─── Tab Bonus ────────────────────────────────────────────────────────────────
 
-function TabBonus() {
+function TabBonus({ adminPass }: { adminPass: string }) {
   const [values, setValues] = useState({
     campeon: '', subcampeon: '', goleador: '', guante_oro: '', mejor_joven: '',
   })
   const [guardado, setGuardado] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [errorBonus, setErrorBonus] = useState('')
 
   useEffect(() => {
     supabase.from('resultados_bonus').select('*').eq('id', 1).single()
@@ -675,8 +696,18 @@ function TabBonus() {
 
   const guardar = async () => {
     setGuardando(true)
-    await supabase.from('resultados_bonus').update(values).eq('id', 1)
+    setErrorBonus('')
+    const res = await fetch('/api/admin/bonus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPass },
+      body: JSON.stringify(values),
+    })
     setGuardando(false)
+    if (!res.ok) {
+      const json = await res.json()
+      setErrorBonus(json.error || 'Error al guardar')
+      return
+    }
     setGuardado(true)
     setTimeout(() => setGuardado(false), 2000)
   }
@@ -720,6 +751,7 @@ function TabBonus() {
       >
         {guardado ? '✓ Guardado' : guardando ? 'Guardando...' : 'Guardar resultados bonus'}
       </button>
+      {errorBonus && <p className="text-red-400 text-sm">⚠️ {errorBonus}</p>}
     </div>
   )
 }
@@ -732,10 +764,11 @@ interface Premio {
   descripcion: string
 }
 
-function TabPremios() {
+function TabPremios({ adminPass }: { adminPass: string }) {
   const [premios, setPremios] = useState<Premio[]>([])
   const [loading, setLoading] = useState(true)
   const [guardandos, setGuardandos] = useState<Set<number>>(new Set())
+  const [errores, setErrores] = useState<Record<number, string>>({})
 
   useEffect(() => {
     supabase.from('premios').select('puesto, nombre, descripcion').order('puesto')
@@ -747,14 +780,22 @@ function TabPremios() {
 
   const update = (puesto: number, campo: 'nombre' | 'descripcion', valor: string) => {
     setPremios(prev => prev.map(p => p.puesto === puesto ? { ...p, [campo]: valor } : p))
+    setErrores(prev => { const n = { ...prev }; delete n[puesto]; return n })
   }
 
   const guardar = async (puesto: number) => {
     const premio = premios.find(p => p.puesto === puesto)
     if (!premio) return
-    await supabase.from('premios')
-      .update({ nombre: premio.nombre, descripcion: premio.descripcion })
-      .eq('puesto', puesto)
+    const res = await fetch('/api/admin/premios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPass },
+      body: JSON.stringify({ puesto, nombre: premio.nombre, descripcion: premio.descripcion }),
+    })
+    if (!res.ok) {
+      const json = await res.json()
+      setErrores(prev => ({ ...prev, [puesto]: json.error }))
+      return
+    }
     setGuardandos(prev => new Set(Array.from(prev).concat(puesto)))
     setTimeout(() => setGuardandos(prev => {
       const s = new Set(Array.from(prev))
@@ -817,6 +858,9 @@ function TabPremios() {
               >
                 {guardandos.has(p.puesto) ? '✓ Guardado' : 'Guardar'}
               </button>
+              {errores[p.puesto] && (
+                <p className="text-red-400 text-xs mt-1.5">⚠️ {errores[p.puesto]}</p>
+              )}
             </div>
           ))}
         </div>
@@ -1008,7 +1052,7 @@ function TabSync() {
 
 // ─── Tab Config ───────────────────────────────────────────────────────────────
 
-function TabConfig() {
+function TabConfig({ adminPass }: { adminPass: string }) {
   const [config, setConfig] = useState<Configuracion[]>([])
   const [loading, setLoading] = useState(true)
   const [guardados, setGuardados] = useState<Set<string>>(new Set())
@@ -1031,13 +1075,14 @@ function TabConfig() {
   }
 
   const guardarItem = async (item: Configuracion) => {
-    const { error } = await supabase
-      .from('configuracion')
-      .update({ valor: item.valor })
-      .eq('clave', item.clave)
-
-    if (error) {
-      setErrores(prev => ({ ...prev, [item.clave]: error.message }))
+    const res = await fetch('/api/admin/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPass },
+      body: JSON.stringify({ clave: item.clave, valor: item.valor }),
+    })
+    if (!res.ok) {
+      const json = await res.json()
+      setErrores(prev => ({ ...prev, [item.clave]: json.error || 'Error al guardar' }))
       return
     }
 
