@@ -136,25 +136,40 @@ ALTER TABLE configuracion ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resultados_bonus ENABLE ROW LEVEL SECURITY;
 
 -- Lectura pública + insert abierto (sin login)
+DROP POLICY IF EXISTS "Lectura publica participantes"      ON participantes;
+DROP POLICY IF EXISTS "Insertar participante"              ON participantes;
 CREATE POLICY "Lectura publica participantes"      ON participantes            FOR SELECT USING (true);
 CREATE POLICY "Insertar participante"              ON participantes            FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Lectura publica pronosticos grupos" ON pronosticos_grupos;
+DROP POLICY IF EXISTS "Insertar pronosticos grupos"        ON pronosticos_grupos;
 CREATE POLICY "Lectura publica pronosticos grupos" ON pronosticos_grupos       FOR SELECT USING (true);
 CREATE POLICY "Insertar pronosticos grupos"        ON pronosticos_grupos       FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Lectura publica pronosticos elim"   ON pronosticos_eliminatorias;
+DROP POLICY IF EXISTS "Insertar pronosticos elim"          ON pronosticos_eliminatorias;
 CREATE POLICY "Lectura publica pronosticos elim"   ON pronosticos_eliminatorias FOR SELECT USING (true);
 CREATE POLICY "Insertar pronosticos elim"          ON pronosticos_eliminatorias FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Lectura publica bonus"              ON bonus;
+DROP POLICY IF EXISTS "Insertar bonus"                     ON bonus;
 CREATE POLICY "Lectura publica bonus"              ON bonus                    FOR SELECT USING (true);
 CREATE POLICY "Insertar bonus"                     ON bonus                    FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Lectura publica partidos"           ON partidos;
+DROP POLICY IF EXISTS "Insertar partidos"                  ON partidos;
+DROP POLICY IF EXISTS "Update partidos"                    ON partidos;
 CREATE POLICY "Lectura publica partidos"           ON partidos                 FOR SELECT USING (true);
 CREATE POLICY "Insertar partidos"                  ON partidos                 FOR INSERT WITH CHECK (true);
 CREATE POLICY "Update partidos"                    ON partidos                 FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Lectura publica configuracion"      ON configuracion;
+DROP POLICY IF EXISTS "Update configuracion"               ON configuracion;
 CREATE POLICY "Lectura publica configuracion"      ON configuracion            FOR SELECT USING (true);
 CREATE POLICY "Update configuracion"               ON configuracion            FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Lectura publica resultados_bonus"   ON resultados_bonus;
+DROP POLICY IF EXISTS "Update resultados_bonus"            ON resultados_bonus;
 CREATE POLICY "Lectura publica resultados_bonus"   ON resultados_bonus         FOR SELECT USING (true);
 CREATE POLICY "Update resultados_bonus"            ON resultados_bonus         FOR UPDATE USING (true);
 
@@ -304,11 +319,11 @@ BEGIN
   IF rb IS NOT NULL THEN
     SELECT * INTO b FROM bonus WHERE participante_id = p_participante_id;
     IF b IS NOT NULL THEN
-      IF rb.campeon IS NOT NULL AND b.campeon = rb.campeon THEN total := total + 50; END IF;
-      IF rb.subcampeon IS NOT NULL AND b.subcampeon = rb.subcampeon THEN total := total + 25; END IF;
-      IF rb.goleador IS NOT NULL AND lower(b.goleador) = lower(rb.goleador) THEN total := total + 20; END IF;
-      IF rb.guante_oro IS NOT NULL AND lower(b.guante_oro) = lower(rb.guante_oro) THEN total := total + 15; END IF;
-      IF rb.mejor_joven IS NOT NULL AND lower(b.mejor_joven) = lower(rb.mejor_joven) THEN total := total + 15; END IF;
+      IF rb.campeon IS NOT NULL AND b.campeon = rb.campeon THEN total := total + 100; END IF;
+      IF rb.subcampeon IS NOT NULL AND b.subcampeon = rb.subcampeon THEN total := total + 50; END IF;
+      IF rb.goleador IS NOT NULL AND lower(b.goleador) = lower(rb.goleador) THEN total := total + 50; END IF;
+      IF rb.guante_oro IS NOT NULL AND lower(b.guante_oro) = lower(rb.guante_oro) THEN total := total + 50; END IF;
+      IF rb.mejor_joven IS NOT NULL AND lower(b.mejor_joven) = lower(rb.mejor_joven) THEN total := total + 50; END IF;
     END IF;
   END IF;
 
