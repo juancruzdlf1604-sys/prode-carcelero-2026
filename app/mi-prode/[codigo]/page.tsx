@@ -4,6 +4,8 @@ import Header from '@/components/ui/Header'
 import { BANDERAS } from '@/lib/types'
 import { calcularPuntosGrupo, calcularPuntosBonus } from '@/lib/puntos'
 import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
 interface Props {
   params: { codigo: string }
 }

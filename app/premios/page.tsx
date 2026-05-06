@@ -4,6 +4,8 @@ import Header from '@/components/ui/Header'
 import RayasDecorativas, { RayasHorizontales } from '@/components/ui/RayasDecorativos'
 import { supabase } from '@/lib/supabase/client'
 
+export const dynamic = 'force-dynamic'
+
 async function getConfig() {
   try {
     const { data } = await supabase.from('configuracion').select('clave, valor')

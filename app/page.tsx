@@ -5,6 +5,9 @@ import RayasDecorativas, { RayasHorizontales } from '@/components/ui/RayasDecora
 import Header from '@/components/ui/Header'
 import Countdown from '@/components/ui/Countdown'
 
+// Siempre server-render: los valores de config deben estar frescos
+export const dynamic = 'force-dynamic'
+
 async function getConfig() {
   const { data } = await supabase.from('configuracion').select('clave, valor')
   const config: Record<string, string> = {}
