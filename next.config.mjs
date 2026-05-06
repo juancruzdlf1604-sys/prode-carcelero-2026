@@ -1,4 +1,12 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  images: {
+    remotePatterns: [],
+  },
+  // Suprimir error de build sin Supabase configurado
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+}
 
-export default nextConfig;
+export default nextConfig

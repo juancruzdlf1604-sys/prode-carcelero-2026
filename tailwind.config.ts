@@ -9,8 +9,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        naval: '#1B2E5E',
+        blanco: '#FFFFFF',
+        dorado: '#C8A728',
+        azul: '#2D5CA6',
+        oscuro: '#0F1E3D',
+      },
+      fontFamily: {
+        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+      },
+      backgroundImage: {
+        'rayas': 'repeating-linear-gradient(180deg, #1B2E5E 0px, #1B2E5E 4px, #FFFFFF 4px, #FFFFFF 8px)',
       },
     },
   },
