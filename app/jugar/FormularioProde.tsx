@@ -8,7 +8,7 @@ import PasoBonus from './pasos/PasoBonus'
 import PasoGrupos from './pasos/PasoGrupos'
 import PasoEliminatorias from './pasos/PasoEliminatorias'
 import PasoResumen from './pasos/PasoResumen'
-import { supabase } from '@/lib/supabase/client'
+import { supabase, isConfigured } from '@/lib/supabase/client'
 import { PARTIDOS_GRUPOS } from '@/lib/partidos-data'
 
 export interface DatosProde {
@@ -79,13 +79,28 @@ export default function FormularioProde() {
   const enviarProde = async () => {
     setEnviando(true)
     setError('')
+
+    if (!isConfigured()) {
+      setError('Error de configuración: Supabase no está configurado. Contactá al organizador.')
+      setEnviando(false)
+      return
+    }
+
     try {
-      const { count } = await supabase
+      console.log('[enviarProde] Iniciando envío...')
+
+      const { count, error: errCount } = await supabase
         .from('participantes')
         .select('*', { count: 'exact', head: true })
 
+      if (errCount) {
+        console.error('[enviarProde] Error al contar participantes:', errCount)
+        throw new Error(`Error de conexión con la base de datos: ${errCount.message}`)
+      }
+
       const numero = (count ?? 0) + 1
       const codigo = `SC-${String(numero).padStart(4, '0')}`
+      console.log('[enviarProde] Código asignado:', codigo)
 
       const { data: participante, error: errPart } = await supabase
         .from('participantes')
@@ -93,12 +108,17 @@ export default function FormularioProde() {
         .select()
         .single()
 
-      if (errPart || !participante) throw new Error(errPart?.message || 'Error al crear participante')
+      if (errPart || !participante) {
+        console.error('[enviarProde] Error al insertar participante:', errPart)
+        throw new Error(`Error al crear participante: ${errPart?.message || 'sin respuesta del servidor'}`)
+      }
+      console.log('[enviarProde] Participante creado:', participante.id)
 
-      await supabase.from('bonus').insert({
+      const { error: errBonus } = await supabase.from('bonus').insert({
         participante_id: participante.id,
         ...datos.bonus,
       })
+      if (errBonus) console.error('[enviarProde] Error al insertar bonus:', errBonus)
 
       const pronosticosGrupos = Object.entries(datos.pronosticos).map(([partido_id, goles]) => ({
         participante_id: participante.id,
@@ -107,7 +127,12 @@ export default function FormularioProde() {
         goles_visitante: goles.goles_visitante,
       }))
       if (pronosticosGrupos.length > 0) {
-        await supabase.from('pronosticos_grupos').insert(pronosticosGrupos)
+        const { error: errGrupos } = await supabase.from('pronosticos_grupos').insert(pronosticosGrupos)
+        if (errGrupos) {
+          console.error('[enviarProde] Error al insertar pronosticos_grupos:', errGrupos)
+          throw new Error(`Error al guardar pronósticos de grupos: ${errGrupos.message}`)
+        }
+        console.log('[enviarProde] Pronósticos grupos insertados:', pronosticosGrupos.length)
       }
 
       const pronosticosElim = Object.values(datos.eliminatorias).map(e => ({
@@ -120,13 +145,18 @@ export default function FormularioProde() {
         goles_visitante: e.goles_visitante || null,
       }))
       if (pronosticosElim.length > 0) {
-        await supabase.from('pronosticos_eliminatorias').insert(pronosticosElim)
+        const { error: errElim } = await supabase.from('pronosticos_eliminatorias').insert(pronosticosElim)
+        if (errElim) console.error('[enviarProde] Error al insertar pronosticos_eliminatorias:', errElim)
+        console.log('[enviarProde] Pronósticos eliminatorias insertados:', pronosticosElim.length)
       }
 
+      console.log('[enviarProde] Envío completado. Redirigiendo a /mi-prode/' + codigo)
       localStorage.removeItem('prode-carcelero-2026')
       router.push(`/mi-prode/${codigo}`)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al enviar. Intentá de nuevo.')
+      console.error('[enviarProde] Error general:', e)
+      const msg = e instanceof Error ? e.message : String(e)
+      setError(`Error al enviar: ${msg}`)
     } finally {
       setEnviando(false)
     }

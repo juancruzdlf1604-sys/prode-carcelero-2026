@@ -153,6 +153,15 @@ export default function PasoGrupos({ datos, onChange, onSiguiente, onAnterior }:
                     </span>
                   </div>
                 </div>
+                {/* Botón para confirmar 0-0 en mobile (el onChange no se dispara si no se toca el input) */}
+                {!completado && (
+                  <button
+                    onClick={() => updatePronostico(partido.id, 0, 0)}
+                    className="mt-2 w-full text-xs text-white/30 hover:text-white/60 py-1.5 border border-azul/20 hover:border-azul/40 rounded-lg transition-colors"
+                  >
+                    Confirmar 0-0
+                  </button>
+                )}
               </div>
             )
           })}

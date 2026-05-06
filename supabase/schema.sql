@@ -19,13 +19,13 @@ CREATE TABLE IF NOT EXISTS configuracion (
 
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
   ('precio_inscripcion', '30000', 'Precio de inscripción en pesos'),
-  ('premio_primero', 'Por definir', 'Premio para el 1° puesto'),
-  ('premio_segundo', 'Por definir', 'Premio para el 2° puesto'),
-  ('premio_tercero', 'Por definir', 'Premio para el 3° puesto'),
-  ('alias_pago', 'ALIAS.CLUB.SANCARLOS', 'Alias CBU para transferencias'),
-  ('cbu_pago', '0000000000000000000000', 'CBU para transferencias'),
-  ('whatsapp_admin', '5491100000000', 'WhatsApp del organizador (con código de país)'),
-  ('prode_abierto', 'true', 'Si el prode acepta nuevas inscripciones')
+  ('premio_primero',     'Por definir', 'Premio para el 1° puesto'),
+  ('premio_segundo',     'Por definir', 'Premio para el 2° puesto'),
+  ('premio_tercero',     'Por definir', 'Premio para el 3° puesto'),
+  ('alias_pago',         'ALIAS.CLUB.SANCARLOS', 'Alias CBU para transferencias'),
+  ('cbu_pago',           '0000000000000000000000', 'CBU para transferencias'),
+  ('whatsapp_admin',     '5491100000000', 'WhatsApp del organizador (con código de país)'),
+  ('prode_abierto',      'true', 'Si el prode acepta nuevas inscripciones')
 ON CONFLICT (clave) DO NOTHING;
 
 -- ============================================================
@@ -41,17 +41,16 @@ CREATE TABLE IF NOT EXISTS participantes (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Índice para búsqueda por código
 CREATE INDEX IF NOT EXISTS idx_participantes_codigo ON participantes(codigo);
 
 -- ============================================================
--- PARTIDOS
+-- PARTIDOS (referencia oficial — el admin carga resultados acá)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS partidos (
   id SERIAL PRIMARY KEY,
   fase TEXT NOT NULL CHECK (fase IN ('grupos', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final')),
-  grupo TEXT, -- A, B, C... (solo fase de grupos)
-  ronda INTEGER, -- número de partido dentro del grupo o de la fase
+  grupo TEXT,
+  ronda INTEGER,
   equipo_local TEXT NOT NULL,
   equipo_visitante TEXT NOT NULL,
   goles_local_real INTEGER,
@@ -63,11 +62,13 @@ CREATE TABLE IF NOT EXISTS partidos (
 
 -- ============================================================
 -- PRONÓSTICOS DE GRUPOS
+-- partido_id es el ID del partido en partidos-data.ts (1-72)
+-- NO tiene FK a partidos para no depender de que esa tabla esté poblada
 -- ============================================================
 CREATE TABLE IF NOT EXISTS pronosticos_grupos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   participante_id UUID NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
-  partido_id INTEGER NOT NULL REFERENCES partidos(id),
+  partido_id INTEGER NOT NULL,
   goles_local INTEGER NOT NULL CHECK (goles_local >= 0),
   goles_visitante INTEGER NOT NULL CHECK (goles_visitante >= 0),
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -82,9 +83,8 @@ CREATE INDEX IF NOT EXISTS idx_pronosticos_grupos_participante ON pronosticos_gr
 CREATE TABLE IF NOT EXISTS pronosticos_eliminatorias (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   participante_id UUID NOT NULL REFERENCES participantes(id) ON DELETE CASCADE,
-  partido_id INTEGER REFERENCES partidos(id),
   fase TEXT NOT NULL CHECK (fase IN ('dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final')),
-  slot INTEGER NOT NULL, -- posición del partido en la fase (1..16, 1..8, etc.)
+  slot INTEGER NOT NULL,
   equipo_local TEXT NOT NULL,
   equipo_visitante TEXT NOT NULL,
   goles_local INTEGER CHECK (goles_local >= 0),
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS bonus (
 );
 
 -- ============================================================
--- RESULTADOS BONUS (para calcular puntos)
+-- RESULTADOS BONUS (el admin carga el ganador real)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS resultados_bonus (
   id SERIAL PRIMARY KEY,
@@ -135,134 +135,139 @@ ALTER TABLE partidos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE configuracion ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resultados_bonus ENABLE ROW LEVEL SECURITY;
 
--- Policies: lectura pública para todos
-CREATE POLICY "Lectura publica participantes" ON participantes FOR SELECT USING (true);
-CREATE POLICY "Insertar participante" ON participantes FOR INSERT WITH CHECK (true);
+-- Lectura pública + insert abierto (sin login)
+CREATE POLICY "Lectura publica participantes"      ON participantes            FOR SELECT USING (true);
+CREATE POLICY "Insertar participante"              ON participantes            FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Lectura publica pronosticos grupos" ON pronosticos_grupos FOR SELECT USING (true);
-CREATE POLICY "Insertar pronosticos grupos" ON pronosticos_grupos FOR INSERT WITH CHECK (true);
+CREATE POLICY "Lectura publica pronosticos grupos" ON pronosticos_grupos       FOR SELECT USING (true);
+CREATE POLICY "Insertar pronosticos grupos"        ON pronosticos_grupos       FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Lectura publica pronosticos elim" ON pronosticos_eliminatorias FOR SELECT USING (true);
-CREATE POLICY "Insertar pronosticos elim" ON pronosticos_eliminatorias FOR INSERT WITH CHECK (true);
+CREATE POLICY "Lectura publica pronosticos elim"   ON pronosticos_eliminatorias FOR SELECT USING (true);
+CREATE POLICY "Insertar pronosticos elim"          ON pronosticos_eliminatorias FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Lectura publica bonus" ON bonus FOR SELECT USING (true);
-CREATE POLICY "Insertar bonus" ON bonus FOR INSERT WITH CHECK (true);
+CREATE POLICY "Lectura publica bonus"              ON bonus                    FOR SELECT USING (true);
+CREATE POLICY "Insertar bonus"                     ON bonus                    FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Lectura publica partidos" ON partidos FOR SELECT USING (true);
-CREATE POLICY "Insertar partidos" ON partidos FOR INSERT WITH CHECK (true);
-CREATE POLICY "Update partidos" ON partidos FOR UPDATE USING (true);
+CREATE POLICY "Lectura publica partidos"           ON partidos                 FOR SELECT USING (true);
+CREATE POLICY "Insertar partidos"                  ON partidos                 FOR INSERT WITH CHECK (true);
+CREATE POLICY "Update partidos"                    ON partidos                 FOR UPDATE USING (true);
 
-CREATE POLICY "Lectura publica configuracion" ON configuracion FOR SELECT USING (true);
-CREATE POLICY "Update configuracion" ON configuracion FOR UPDATE USING (true);
+CREATE POLICY "Lectura publica configuracion"      ON configuracion            FOR SELECT USING (true);
+CREATE POLICY "Update configuracion"               ON configuracion            FOR UPDATE USING (true);
 
-CREATE POLICY "Lectura publica resultados_bonus" ON resultados_bonus FOR SELECT USING (true);
-CREATE POLICY "Update resultados_bonus" ON resultados_bonus FOR UPDATE USING (true);
+CREATE POLICY "Lectura publica resultados_bonus"   ON resultados_bonus         FOR SELECT USING (true);
+CREATE POLICY "Update resultados_bonus"            ON resultados_bonus         FOR UPDATE USING (true);
 
 -- ============================================================
--- DATOS: PARTIDOS DEL MUNDIAL 2026 — FASE DE GRUPOS
--- (11 junio – 2 julio 2026)
+-- FIXTURE OFICIAL MUNDIAL 2026 — FASE DE GRUPOS
 -- 12 grupos × 6 partidos = 72 partidos
+-- IDs 1–72 coinciden con los IDs en lib/partidos-data.ts
+-- Grupos: A..L, equipos según fixture confirmado
+-- Formato round-robin por grupo [T1,T2,T3,T4]:
+--   MD1: T1 vs T2, T3 vs T4
+--   MD2: T1 vs T3, T2 vs T4
+--   MD3: T1 vs T4, T2 vs T3
 -- ============================================================
-INSERT INTO partidos (fase, grupo, ronda, equipo_local, equipo_visitante, fecha) VALUES
+INSERT INTO partidos (id, fase, grupo, ronda, equipo_local, equipo_visitante, fecha) OVERRIDING SYSTEM VALUE VALUES
 
--- GRUPO A
-('grupos', 'A', 1, 'México', 'Bolivia', '2026-06-11 21:00:00-05'),
-('grupos', 'A', 2, 'Canadá', 'Panamá', '2026-06-12 12:00:00-05'),
-('grupos', 'A', 3, 'México', 'Canadá', '2026-06-15 18:00:00-05'),
-('grupos', 'A', 4, 'Panamá', 'Bolivia', '2026-06-15 21:00:00-05'),
-('grupos', 'A', 5, 'Panamá', 'México', '2026-06-19 17:00:00-05'),
-('grupos', 'A', 6, 'Bolivia', 'Canadá', '2026-06-19 17:00:00-05'),
+-- GRUPO A: México, Sudáfrica, Corea del Sur, Chequia
+(1,  'grupos', 'A', 1, 'México',        'Sudáfrica',              '2026-06-11'),
+(2,  'grupos', 'A', 1, 'Corea del Sur', 'Chequia',                '2026-06-11'),
+(3,  'grupos', 'A', 2, 'México',        'Corea del Sur',          '2026-06-17'),
+(4,  'grupos', 'A', 2, 'Sudáfrica',     'Chequia',                '2026-06-17'),
+(5,  'grupos', 'A', 3, 'México',        'Chequia',                '2026-06-26'),
+(6,  'grupos', 'A', 3, 'Corea del Sur', 'Sudáfrica',              '2026-06-26'),
 
--- GRUPO B
-('grupos', 'B', 1, 'Argentina', 'Honduras', '2026-06-12 15:00:00-05'),
-('grupos', 'B', 2, 'Marruecos', 'Irak', '2026-06-12 18:00:00-05'),
-('grupos', 'B', 3, 'Argentina', 'Marruecos', '2026-06-16 18:00:00-05'),
-('grupos', 'B', 4, 'Irak', 'Honduras', '2026-06-16 21:00:00-05'),
-('grupos', 'B', 5, 'Irak', 'Argentina', '2026-06-20 18:00:00-05'),
-('grupos', 'B', 6, 'Honduras', 'Marruecos', '2026-06-20 18:00:00-05'),
+-- GRUPO B: Canadá, Bosnia y Herzegovina, Catar, Suiza
+(7,  'grupos', 'B', 1, 'Canadá',               'Bosnia y Herzegovina', '2026-06-12'),
+(8,  'grupos', 'B', 1, 'Catar',                'Suiza',                '2026-06-12'),
+(9,  'grupos', 'B', 2, 'Canadá',               'Catar',                '2026-06-18'),
+(10, 'grupos', 'B', 2, 'Bosnia y Herzegovina', 'Suiza',                '2026-06-18'),
+(11, 'grupos', 'B', 3, 'Canadá',               'Suiza',                '2026-06-27'),
+(12, 'grupos', 'B', 3, 'Catar',                'Bosnia y Herzegovina', '2026-06-27'),
 
--- GRUPO C
-('grupos', 'C', 1, 'Estados Unidos', 'Serbia', '2026-06-12 21:00:00-05'),
-('grupos', 'C', 2, 'Uruguay', 'Senegal', '2026-06-13 12:00:00-05'),
-('grupos', 'C', 3, 'Estados Unidos', 'Uruguay', '2026-06-17 21:00:00-05'),
-('grupos', 'C', 4, 'Senegal', 'Serbia', '2026-06-17 18:00:00-05'),
-('grupos', 'C', 5, 'Senegal', 'Estados Unidos', '2026-06-21 18:00:00-05'),
-('grupos', 'C', 6, 'Serbia', 'Uruguay', '2026-06-21 18:00:00-05'),
+-- GRUPO C: Brasil, Marruecos, Haití, Escocia
+(13, 'grupos', 'C', 1, 'Brasil',    'Marruecos', '2026-06-13'),
+(14, 'grupos', 'C', 1, 'Haití',     'Escocia',   '2026-06-13'),
+(15, 'grupos', 'C', 2, 'Brasil',    'Haití',      '2026-06-19'),
+(16, 'grupos', 'C', 2, 'Marruecos', 'Escocia',   '2026-06-19'),
+(17, 'grupos', 'C', 3, 'Brasil',    'Escocia',   '2026-06-28'),
+(18, 'grupos', 'C', 3, 'Haití',     'Marruecos', '2026-06-28'),
 
--- GRUPO D
-('grupos', 'D', 1, 'Brasil', 'Guinea', '2026-06-13 15:00:00-05'),
-('grupos', 'D', 2, 'Colombia', 'Nigeria', '2026-06-13 18:00:00-05'),
-('grupos', 'D', 3, 'Brasil', 'Colombia', '2026-06-17 15:00:00-05'),
-('grupos', 'D', 4, 'Nigeria', 'Guinea', '2026-06-17 12:00:00-05'),
-('grupos', 'D', 5, 'Nigeria', 'Brasil', '2026-06-21 21:00:00-05'),
-('grupos', 'D', 6, 'Guinea', 'Colombia', '2026-06-21 21:00:00-05'),
+-- GRUPO D: Estados Unidos, Paraguay, Australia, Turquía
+(19, 'grupos', 'D', 1, 'Estados Unidos', 'Paraguay',   '2026-06-14'),
+(20, 'grupos', 'D', 1, 'Australia',      'Turquía',    '2026-06-14'),
+(21, 'grupos', 'D', 2, 'Estados Unidos', 'Australia',  '2026-06-20'),
+(22, 'grupos', 'D', 2, 'Paraguay',       'Turquía',    '2026-06-20'),
+(23, 'grupos', 'D', 3, 'Estados Unidos', 'Turquía',    '2026-06-29'),
+(24, 'grupos', 'D', 3, 'Australia',      'Paraguay',   '2026-06-29'),
 
--- GRUPO E
-('grupos', 'E', 1, 'Francia', 'Albania', '2026-06-13 21:00:00-05'),
-('grupos', 'E', 2, 'Dinamarca', 'China', '2026-06-14 12:00:00-05'),
-('grupos', 'E', 3, 'Francia', 'Dinamarca', '2026-06-18 21:00:00-05'),
-('grupos', 'E', 4, 'China', 'Albania', '2026-06-18 18:00:00-05'),
-('grupos', 'E', 5, 'China', 'Francia', '2026-06-22 21:00:00-05'),
-('grupos', 'E', 6, 'Albania', 'Dinamarca', '2026-06-22 21:00:00-05'),
+-- GRUPO E: Alemania, Curazao, Costa de Marfil, Ecuador
+(25, 'grupos', 'E', 1, 'Alemania',        'Curazao',          '2026-06-11'),
+(26, 'grupos', 'E', 1, 'Costa de Marfil', 'Ecuador',          '2026-06-11'),
+(27, 'grupos', 'E', 2, 'Alemania',        'Costa de Marfil',  '2026-06-17'),
+(28, 'grupos', 'E', 2, 'Curazao',         'Ecuador',          '2026-06-17'),
+(29, 'grupos', 'E', 3, 'Alemania',        'Ecuador',          '2026-06-26'),
+(30, 'grupos', 'E', 3, 'Costa de Marfil', 'Curazao',          '2026-06-26'),
 
--- GRUPO F
-('grupos', 'F', 1, 'España', 'Paraguay', '2026-06-14 15:00:00-05'),
-('grupos', 'F', 2, 'Bélgica', 'Israel', '2026-06-14 18:00:00-05'),
-('grupos', 'F', 3, 'España', 'Bélgica', '2026-06-18 15:00:00-05'),
-('grupos', 'F', 4, 'Israel', 'Paraguay', '2026-06-18 12:00:00-05'),
-('grupos', 'F', 5, 'Israel', 'España', '2026-06-22 18:00:00-05'),
-('grupos', 'F', 6, 'Paraguay', 'Bélgica', '2026-06-22 18:00:00-05'),
+-- GRUPO F: Países Bajos, Japón, Suecia, Túnez
+(31, 'grupos', 'F', 1, 'Países Bajos', 'Japón',  '2026-06-12'),
+(32, 'grupos', 'F', 1, 'Suecia',       'Túnez',  '2026-06-12'),
+(33, 'grupos', 'F', 2, 'Países Bajos', 'Suecia', '2026-06-18'),
+(34, 'grupos', 'F', 2, 'Japón',        'Túnez',  '2026-06-18'),
+(35, 'grupos', 'F', 3, 'Países Bajos', 'Túnez',  '2026-06-27'),
+(36, 'grupos', 'F', 3, 'Japón',        'Suecia', '2026-06-27'),
 
--- GRUPO G
-('grupos', 'G', 1, 'Alemania', 'Kuwait', '2026-06-14 21:00:00-05'),
-('grupos', 'G', 2, 'Portugal', 'Escocia', '2026-06-15 12:00:00-05'),
-('grupos', 'G', 3, 'Alemania', 'Portugal', '2026-06-19 21:00:00-05'),
-('grupos', 'G', 4, 'Escocia', 'Kuwait', '2026-06-19 18:00:00-05'),
-('grupos', 'G', 5, 'Escocia', 'Alemania', '2026-06-23 21:00:00-05'),
-('grupos', 'G', 6, 'Kuwait', 'Portugal', '2026-06-23 21:00:00-05'),
+-- GRUPO G: Bélgica, Egipto, Irán, Nueva Zelanda
+(37, 'grupos', 'G', 1, 'Bélgica', 'Egipto',        '2026-06-13'),
+(38, 'grupos', 'G', 1, 'Irán',    'Nueva Zelanda',  '2026-06-13'),
+(39, 'grupos', 'G', 2, 'Bélgica', 'Irán',           '2026-06-19'),
+(40, 'grupos', 'G', 2, 'Egipto',  'Nueva Zelanda',  '2026-06-19'),
+(41, 'grupos', 'G', 3, 'Bélgica', 'Nueva Zelanda',  '2026-06-28'),
+(42, 'grupos', 'G', 3, 'Irán',    'Egipto',         '2026-06-28'),
 
--- GRUPO H
-('grupos', 'H', 1, 'Países Bajos', 'Sudáfrica', '2026-06-15 15:00:00-05'),
-('grupos', 'H', 2, 'México', 'Bolivia', '2026-06-15 18:00:00-05'),
--- Note: correcting group H with proper teams
--- FIFA confirmed group H teams
-('grupos', 'H', 3, 'Países Bajos', 'México', '2026-06-19 15:00:00-05'),
-('grupos', 'H', 4, 'Bolivia', 'Sudáfrica', '2026-06-19 12:00:00-05'),
-('grupos', 'H', 5, 'Bolivia', 'Países Bajos', '2026-06-23 18:00:00-05'),
-('grupos', 'H', 6, 'Sudáfrica', 'México', '2026-06-23 18:00:00-05'),
+-- GRUPO H: España, Cabo Verde, Arabia Saudita, Uruguay
+(43, 'grupos', 'H', 1, 'España',         'Cabo Verde',     '2026-06-14'),
+(44, 'grupos', 'H', 1, 'Arabia Saudita', 'Uruguay',        '2026-06-14'),
+(45, 'grupos', 'H', 2, 'España',         'Arabia Saudita', '2026-06-20'),
+(46, 'grupos', 'H', 2, 'Cabo Verde',     'Uruguay',        '2026-06-20'),
+(47, 'grupos', 'H', 3, 'España',         'Uruguay',        '2026-06-29'),
+(48, 'grupos', 'H', 3, 'Arabia Saudita', 'Cabo Verde',     '2026-06-29'),
 
--- GRUPO I
-('grupos', 'I', 1, 'Inglaterra', 'Túnez', '2026-06-15 21:00:00-05'),
-('grupos', 'I', 2, 'Eslovenia', 'Kenia', '2026-06-16 12:00:00-05'),
-('grupos', 'I', 3, 'Inglaterra', 'Eslovenia', '2026-06-20 21:00:00-05'),
-('grupos', 'I', 4, 'Kenia', 'Túnez', '2026-06-20 18:00:00-05'),
-('grupos', 'I', 5, 'Kenia', 'Inglaterra', '2026-06-24 21:00:00-05'),
-('grupos', 'I', 6, 'Túnez', 'Eslovenia', '2026-06-24 21:00:00-05'),
+-- GRUPO I: Francia, Senegal, Noruega, Irak
+(49, 'grupos', 'I', 1, 'Francia', 'Senegal', '2026-06-15'),
+(50, 'grupos', 'I', 1, 'Noruega', 'Irak',    '2026-06-15'),
+(51, 'grupos', 'I', 2, 'Francia', 'Noruega', '2026-06-21'),
+(52, 'grupos', 'I', 2, 'Senegal', 'Irak',    '2026-06-21'),
+(53, 'grupos', 'I', 3, 'Francia', 'Irak',    '2026-06-30'),
+(54, 'grupos', 'I', 3, 'Noruega', 'Senegal', '2026-06-30'),
 
--- GRUPO J
-('grupos', 'J', 1, 'Japón', 'Camerún', '2026-06-16 15:00:00-05'),
-('grupos', 'J', 2, 'Croacia', 'Marruecos', '2026-06-16 18:00:00-05'),
--- Note: Marruecos está en grupo B, ajustando
-('grupos', 'J', 3, 'Japón', 'Croacia', '2026-06-20 15:00:00-05'),
-('grupos', 'J', 4, 'Marruecos', 'Camerún', '2026-06-20 12:00:00-05'),
-('grupos', 'J', 5, 'Marruecos', 'Japón', '2026-06-24 18:00:00-05'),
-('grupos', 'J', 6, 'Camerún', 'Croacia', '2026-06-24 18:00:00-05'),
+-- GRUPO J: Argentina, Argelia, Austria, Jordania
+(55, 'grupos', 'J', 1, 'Argentina', 'Argelia',  '2026-06-15'),
+(56, 'grupos', 'J', 1, 'Austria',   'Jordania', '2026-06-15'),
+(57, 'grupos', 'J', 2, 'Argentina', 'Austria',  '2026-06-21'),
+(58, 'grupos', 'J', 2, 'Argelia',   'Jordania', '2026-06-21'),
+(59, 'grupos', 'J', 3, 'Argentina', 'Jordania', '2026-06-30'),
+(60, 'grupos', 'J', 3, 'Austria',   'Argelia',  '2026-06-30'),
 
--- GRUPO K
-('grupos', 'K', 1, 'Italia', 'Ecuador', '2026-06-16 21:00:00-05'),
-('grupos', 'K', 2, 'Suiza', 'Venezuela', '2026-06-17 12:00:00-05'),
-('grupos', 'K', 3, 'Italia', 'Suiza', '2026-06-21 15:00:00-05'),
-('grupos', 'K', 4, 'Venezuela', 'Ecuador', '2026-06-21 12:00:00-05'),
-('grupos', 'K', 5, 'Venezuela', 'Italia', '2026-06-25 21:00:00-05'),
-('grupos', 'K', 6, 'Ecuador', 'Suiza', '2026-06-25 21:00:00-05'),
+-- GRUPO K: Portugal, Uzbekistán, Colombia, RD Congo
+(61, 'grupos', 'K', 1, 'Portugal',   'Uzbekistán', '2026-06-13'),
+(62, 'grupos', 'K', 1, 'Colombia',   'RD Congo',   '2026-06-13'),
+(63, 'grupos', 'K', 2, 'Portugal',   'Colombia',   '2026-06-20'),
+(64, 'grupos', 'K', 2, 'Uzbekistán', 'RD Congo',   '2026-06-20'),
+(65, 'grupos', 'K', 3, 'Portugal',   'RD Congo',   '2026-07-01'),
+(66, 'grupos', 'K', 3, 'Colombia',   'Uzbekistán', '2026-07-01'),
 
--- GRUPO L
-('grupos', 'L', 1, 'Corea del Sur', 'Arabia Saudita', '2026-06-17 21:00:00-05'),
-('grupos', 'L', 2, 'Australia', 'Rumania', '2026-06-18 12:00:00-05'),
-('grupos', 'L', 3, 'Corea del Sur', 'Australia', '2026-06-22 15:00:00-05'),
-('grupos', 'L', 4, 'Rumania', 'Arabia Saudita', '2026-06-22 12:00:00-05'),
-('grupos', 'L', 5, 'Rumania', 'Corea del Sur', '2026-06-26 21:00:00-05'),
-('grupos', 'L', 6, 'Arabia Saudita', 'Australia', '2026-06-26 21:00:00-05');
+-- GRUPO L: Inglaterra, Croacia, Ghana, Panamá
+(67, 'grupos', 'L', 1, 'Inglaterra', 'Croacia', '2026-06-14'),
+(68, 'grupos', 'L', 1, 'Ghana',      'Panamá',  '2026-06-14'),
+(69, 'grupos', 'L', 2, 'Inglaterra', 'Ghana',   '2026-06-22'),
+(70, 'grupos', 'L', 2, 'Croacia',    'Panamá',  '2026-06-22'),
+(71, 'grupos', 'L', 3, 'Inglaterra', 'Panamá',  '2026-07-02'),
+(72, 'grupos', 'L', 3, 'Croacia',    'Ghana',   '2026-07-02');
+
+-- Resetear el sequence de partidos para que próximos inserts (fase eliminatoria) continúen desde 73
+SELECT setval('partidos_id_seq', 72);
 
 -- ============================================================
 -- FUNCIÓN: Calcular puntos de un participante
@@ -273,6 +278,7 @@ DECLARE
   total INTEGER := 0;
   rec RECORD;
   rb RECORD;
+  b RECORD;
 BEGIN
   -- Puntos fase de grupos
   FOR rec IN
@@ -293,49 +299,17 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- Puntos fase eliminatoria
-  FOR rec IN
-    SELECT
-      pe.equipo_local, pe.equipo_visitante,
-      pe.goles_local, pe.goles_visitante,
-      p.equipo_local AS real_local, p.equipo_visitante AS real_visitante,
-      p.goles_local_real, p.goles_visitante_real,
-      p.jugado
-    FROM pronosticos_eliminatorias pe
-    JOIN partidos p ON p.id = pe.partido_id
-    WHERE pe.participante_id = p_participante_id AND p.jugado = true
-  LOOP
-    -- Acertó ambos equipos: +10
-    IF (rec.equipo_local = rec.real_local AND rec.equipo_visitante = rec.real_visitante)
-    OR (rec.equipo_local = rec.real_visitante AND rec.equipo_visitante = rec.real_local) THEN
-      total := total + 10;
-      -- Acertó el ganador: +10
-      IF (rec.goles_local > rec.goles_visitante AND rec.goles_local_real > rec.goles_visitante_real)
-      OR (rec.goles_local < rec.goles_visitante AND rec.goles_local_real < rec.goles_visitante_real) THEN
-        total := total + 10;
-        -- Acertó resultado exacto: +20
-        IF rec.goles_local = rec.goles_local_real AND rec.goles_visitante = rec.goles_visitante_real THEN
-          total := total + 20;
-        END IF;
-      END IF;
-    END IF;
-  END LOOP;
-
   -- Puntos bonus
   SELECT * INTO rb FROM resultados_bonus WHERE id = 1;
   IF rb IS NOT NULL THEN
-    DECLARE
-      b RECORD;
-    BEGIN
-      SELECT * INTO b FROM bonus WHERE participante_id = p_participante_id;
-      IF b IS NOT NULL THEN
-        IF rb.campeon IS NOT NULL AND b.campeon = rb.campeon THEN total := total + 100; END IF;
-        IF rb.subcampeon IS NOT NULL AND b.subcampeon = rb.subcampeon THEN total := total + 50; END IF;
-        IF rb.goleador IS NOT NULL AND b.goleador = rb.goleador THEN total := total + 50; END IF;
-        IF rb.guante_oro IS NOT NULL AND b.guante_oro = rb.guante_oro THEN total := total + 50; END IF;
-        IF rb.mejor_joven IS NOT NULL AND b.mejor_joven = rb.mejor_joven THEN total := total + 50; END IF;
-      END IF;
-    END;
+    SELECT * INTO b FROM bonus WHERE participante_id = p_participante_id;
+    IF b IS NOT NULL THEN
+      IF rb.campeon IS NOT NULL AND b.campeon = rb.campeon THEN total := total + 50; END IF;
+      IF rb.subcampeon IS NOT NULL AND b.subcampeon = rb.subcampeon THEN total := total + 25; END IF;
+      IF rb.goleador IS NOT NULL AND lower(b.goleador) = lower(rb.goleador) THEN total := total + 20; END IF;
+      IF rb.guante_oro IS NOT NULL AND lower(b.guante_oro) = lower(rb.guante_oro) THEN total := total + 15; END IF;
+      IF rb.mejor_joven IS NOT NULL AND lower(b.mejor_joven) = lower(rb.mejor_joven) THEN total := total + 15; END IF;
+    END IF;
   END IF;
 
   RETURN total;
