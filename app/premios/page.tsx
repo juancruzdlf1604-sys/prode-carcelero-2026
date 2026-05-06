@@ -15,6 +15,17 @@ async function getConfig() {
   }
 }
 
+async function getPremiosDB(): Promise<Record<number, { nombre: string; descripcion: string }>> {
+  try {
+    const { data } = await supabase.from('premios').select('puesto, nombre, descripcion').order('puesto')
+    const map: Record<number, { nombre: string; descripcion: string }> = {}
+    data?.forEach(r => { map[r.puesto] = { nombre: r.nombre, descripcion: r.descripcion } })
+    return map
+  } catch {
+    return {}
+  }
+}
+
 // Premios placeholder — se reemplazarán desde el admin
 const PREMIOS_PLACEHOLDER = [
   {
@@ -130,9 +141,15 @@ const PREMIOS_PLACEHOLDER = [
 ] as const
 
 export default async function PremiosPage() {
-  const config = await getConfig()
+  const [config, premiosDB] = await Promise.all([getConfig(), getPremiosDB()])
   const precio = config.precio_inscripcion ?? '30000'
   const prodeAbierto = config.prode_abierto !== 'false'
+
+  // Merge DB data over the hardcoded placeholder
+  const premios = PREMIOS_PLACEHOLDER.map(p => {
+    const db = premiosDB[p.puesto]
+    return db ? { ...p, nombre: db.nombre, descripcion: db.descripcion } : p
+  })
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -191,12 +208,12 @@ export default async function PremiosPage() {
         </div>
 
         {/* 1° Puesto — destacado */}
-        <PremioDestacado premio={PREMIOS_PLACEHOLDER[0]} />
+        <PremioDestacado premio={premios[0]} />
 
         {/* 2° y 3° — en fila */}
         <div className="grid sm:grid-cols-2 gap-4">
-          <PremioCard premio={PREMIOS_PLACEHOLDER[1]} />
-          <PremioCard premio={PREMIOS_PLACEHOLDER[2]} />
+          <PremioCard premio={premios[1]} />
+          <PremioCard premio={premios[2]} />
         </div>
 
         <RayasHorizontales className="my-4" />
@@ -205,7 +222,7 @@ export default async function PremiosPage() {
         <div>
           <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest text-center mb-4">Otros premios</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {PREMIOS_PLACEHOLDER.slice(3, 9).map(p => (
+            {premios.slice(3, 9).map(p => (
               <PremioChico key={p.puesto} premio={p} />
             ))}
           </div>
@@ -214,7 +231,7 @@ export default async function PremiosPage() {
         <RayasHorizontales className="my-4" />
 
         {/* Premio especial */}
-        <PremioCard premio={PREMIOS_PLACEHOLDER[9]} />
+        <PremioCard premio={premios[9]} />
       </section>
 
       {/* Banner rayas azul-blanco */}
@@ -263,7 +280,17 @@ export default async function PremiosPage() {
 
 // ─── Componentes ─────────────────────────────────────────────────────────────
 
-type PremioData = typeof PREMIOS_PLACEHOLDER[number]
+interface PremioData {
+  puesto: number
+  emoji: string
+  nombre: string
+  descripcion: string
+  imagen: string | null
+  colorBorde: string
+  colorBg: string
+  colorTexto: string
+  size: string
+}
 
 function PremioDestacado({ premio }: { premio: PremioData }) {
   return (

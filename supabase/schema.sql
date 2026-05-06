@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS resultados_bonus         CASCADE;
 DROP TABLE IF EXISTS partidos                 CASCADE;
 DROP TABLE IF EXISTS participantes            CASCADE;
 DROP TABLE IF EXISTS configuracion            CASCADE;
+DROP TABLE IF EXISTS premios                  CASCADE;
 
 -- ============================================================
 -- CONFIGURACIÓN DEL PRODE (precio, premios, etc.)
@@ -39,6 +40,29 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
   ('whatsapp_admin',     '5491100000000', 'WhatsApp del organizador (con código de país)'),
   ('prode_abierto',      'true', 'Si el prode acepta nuevas inscripciones')
 ON CONFLICT (clave) DO NOTHING;
+
+-- ============================================================
+-- PREMIOS (nombre y descripción de cada puesto, editables desde el admin)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS premios (
+  puesto INTEGER PRIMARY KEY CHECK (puesto BETWEEN 1 AND 10),
+  nombre TEXT NOT NULL DEFAULT 'Premio a confirmar',
+  descripcion TEXT NOT NULL DEFAULT 'Premio a confirmar por los organizadores.',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO premios (puesto, nombre, descripcion) VALUES
+  (1,  'Premio Mayor',     'El gran ganador del Prode Carcelero 2026 se lleva el premio principal. ¡A acertar todos los resultados!'),
+  (2,  'Segundo Premio',   'El subcampeón del prode también tiene su recompensa bien merecida.'),
+  (3,  'Tercer Premio',    'Tercer lugar en la tabla de posiciones. ¡El podio del Prode Carcelero!'),
+  (4,  '4° Puesto',        'Premio especial para el cuarto clasificado.'),
+  (5,  '5° Puesto',        'Premio especial para el quinto clasificado.'),
+  (6,  '6° Puesto',        'Premio especial para el sexto clasificado.'),
+  (7,  'Premio Sorpresa',  'Premio especial a definir por los organizadores.'),
+  (8,  'Premio Sorpresa',  'Premio especial a definir por los organizadores.'),
+  (9,  'Premio Sorpresa',  'Premio especial a definir por los organizadores.'),
+  (10, 'Premio El León',   'Premio especial del Club San Carlos. El Carcelero premia a quien más se esforzó.')
+ON CONFLICT (puesto) DO NOTHING;
 
 -- ============================================================
 -- PARTICIPANTES
@@ -150,8 +174,12 @@ ALTER TABLE resultados_bonus ENABLE ROW LEVEL SECURITY;
 -- Lectura pública + insert abierto (sin login)
 DROP POLICY IF EXISTS "Lectura publica participantes"      ON participantes;
 DROP POLICY IF EXISTS "Insertar participante"              ON participantes;
+DROP POLICY IF EXISTS "Update participantes"               ON participantes;
+DROP POLICY IF EXISTS "Delete participantes"               ON participantes;
 CREATE POLICY "Lectura publica participantes"      ON participantes            FOR SELECT USING (true);
 CREATE POLICY "Insertar participante"              ON participantes            FOR INSERT WITH CHECK (true);
+CREATE POLICY "Update participantes"               ON participantes            FOR UPDATE USING (true);
+CREATE POLICY "Delete participantes"               ON participantes            FOR DELETE USING (true);
 
 DROP POLICY IF EXISTS "Lectura publica pronosticos grupos" ON pronosticos_grupos;
 DROP POLICY IF EXISTS "Insertar pronosticos grupos"        ON pronosticos_grupos;
@@ -184,6 +212,13 @@ DROP POLICY IF EXISTS "Lectura publica resultados_bonus"   ON resultados_bonus;
 DROP POLICY IF EXISTS "Update resultados_bonus"            ON resultados_bonus;
 CREATE POLICY "Lectura publica resultados_bonus"   ON resultados_bonus         FOR SELECT USING (true);
 CREATE POLICY "Update resultados_bonus"            ON resultados_bonus         FOR UPDATE USING (true);
+
+ALTER TABLE premios ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Lectura publica premios"            ON premios;
+DROP POLICY IF EXISTS "Update premios"                     ON premios;
+CREATE POLICY "Lectura publica premios"            ON premios                  FOR SELECT USING (true);
+CREATE POLICY "Update premios"                     ON premios                  FOR UPDATE USING (true);
 
 -- ============================================================
 -- FIXTURE OFICIAL MUNDIAL 2026 — FASE DE GRUPOS
