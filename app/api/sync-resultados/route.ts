@@ -88,11 +88,8 @@ export async function GET(req: NextRequest) {
     let sinCambios = 0
 
     for (const match of matches) {
-      // Skip if teams are missing (API can return nulls for placeholder matches)
-      if (!match.homeTeam?.name || !match.awayTeam?.name) {
-        errores.push(`Partido id=${match.id}: equipo sin nombre (homeTeam=${match.homeTeam?.name ?? 'null'}, awayTeam=${match.awayTeam?.name ?? 'null'})`)
-        continue
-      }
+      // Skip placeholder knockout matches where teams aren't defined yet
+      if (!match.homeTeam?.name || !match.awayTeam?.name) continue
 
       const apiLocal = mapTeamName(match.homeTeam.name)
       const apiVisitante = mapTeamName(match.awayTeam.name)
