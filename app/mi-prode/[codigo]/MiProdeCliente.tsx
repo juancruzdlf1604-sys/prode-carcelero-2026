@@ -237,10 +237,14 @@ export default function MiProdeCliente({
       </div>
 
       {/* Eliminatorias */}
-      {rondas.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-dorado font-bold text-sm uppercase tracking-wider px-1">🏆 Eliminatorias</h2>
-          {rondas.map(({ ronda, label, partidos }) => {
+      <div className="space-y-2">
+        <h2 className="text-dorado font-bold text-sm uppercase tracking-wider px-1">🏆 Fase eliminatoria</h2>
+        {rondas.length === 0 ? (
+          <div className="bg-naval rounded-xl border border-azul/30 px-4 py-6 text-center text-white/30 text-sm">
+            No hay pronósticos de eliminatorias cargados
+          </div>
+        ) : (
+          rondas.map(({ ronda, label, partidos }) => {
             const isOpen = openRondas.has(ronda)
             return (
               <div key={ronda} className="bg-naval rounded-xl border border-azul/30 overflow-hidden">
@@ -294,9 +298,9 @@ export default function MiProdeCliente({
                 )}
               </div>
             )
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
 
       {/* Link a tabla */}
       <div className="text-center py-2">
