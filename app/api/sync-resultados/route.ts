@@ -20,8 +20,8 @@ interface FootballMatch {
   utcDate: string
   status: string
   stage: string
-  homeTeam: { id: number; name: string }
-  awayTeam: { id: number; name: string }
+  homeTeam: { id: number; name: string | null } | null
+  awayTeam: { id: number; name: string | null } | null
   score: {
     winner: string | null
     fullTime: { home: number | null; away: number | null }
@@ -88,6 +88,12 @@ export async function GET(req: NextRequest) {
     let sinCambios = 0
 
     for (const match of matches) {
+      // Skip if teams are missing (API can return nulls for placeholder matches)
+      if (!match.homeTeam?.name || !match.awayTeam?.name) {
+        errores.push(`Partido id=${match.id}: equipo sin nombre (homeTeam=${match.homeTeam?.name ?? 'null'}, awayTeam=${match.awayTeam?.name ?? 'null'})`)
+        continue
+      }
+
       const apiLocal = mapTeamName(match.homeTeam.name)
       const apiVisitante = mapTeamName(match.awayTeam.name)
       const normalKey = `${normalizeTeamName(apiLocal)}|${normalizeTeamName(apiVisitante)}`

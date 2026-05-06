@@ -60,7 +60,8 @@ export const TEAM_NAME_MAP: Record<string, string> = {
   'Panama': 'Panamá',
 }
 
-export function normalizeTeamName(name: string): string {
+export function normalizeTeamName(name: string | null | undefined): string {
+  if (!name) return ''
   return name
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -70,7 +71,9 @@ export function normalizeTeamName(name: string): string {
     .trim()
 }
 
-export function mapTeamName(apiName: string): string {
+export function mapTeamName(apiName: string | null | undefined): string {
+  if (!apiName) return ''
+
   // Try direct map first
   if (TEAM_NAME_MAP[apiName]) return TEAM_NAME_MAP[apiName]
 

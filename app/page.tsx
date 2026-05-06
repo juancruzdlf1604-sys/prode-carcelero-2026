@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RayasDecorativas, { RayasHorizontales } from '@/components/ui/RayasDecorativos'
 import Header from '@/components/ui/Header'
+import Countdown from '@/components/ui/Countdown'
 
 async function getConfig() {
   const { data } = await supabase.from('configuracion').select('clave, valor')
@@ -93,6 +94,8 @@ export default async function HomePage() {
       </section>
 
       <RayasDecorativas />
+
+      <Countdown />
 
       {/* Stats */}
       <section className="bg-naval py-6 px-4">
