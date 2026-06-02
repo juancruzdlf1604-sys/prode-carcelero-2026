@@ -90,16 +90,20 @@ export default function FormularioProde() {
     try {
       console.log('[enviarProde] Iniciando envío...')
 
-      const { count, error: errCount } = await supabase
+      const { data: maxRow, error: errMax } = await supabase
         .from('participantes')
-        .select('*', { count: 'exact', head: true })
+        .select('codigo')
+        .order('codigo', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-      if (errCount) {
-        console.error('[enviarProde] Error al contar participantes:', errCount)
-        throw new Error(`Error de conexión con la base de datos: ${errCount.message}`)
+      if (errMax) {
+        console.error('[enviarProde] Error al obtener max codigo:', errMax)
+        throw new Error(`Error de conexión con la base de datos: ${errMax.message}`)
       }
 
-      const numero = (count ?? 0) + 1
+      const lastNum = maxRow ? parseInt(maxRow.codigo.replace('SC-', '')) || 0 : 0
+      const numero = lastNum + 1
       const codigo = `SC-${String(numero).padStart(4, '0')}`
       console.log('[enviarProde] Código asignado:', codigo)
 
