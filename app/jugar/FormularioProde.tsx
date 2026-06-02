@@ -150,9 +150,9 @@ export default function FormularioProde() {
         console.log('[enviarProde] Pronósticos eliminatorias insertados:', pronosticosElim.length)
       }
 
-      console.log('[enviarProde] Envío completado. Redirigiendo a /mi-prode/' + codigo)
+      console.log('[enviarProde] Envío completado. Redirigiendo a /exito/' + codigo)
       localStorage.removeItem('prode-carcelero-2026')
-      router.push(`/mi-prode/${codigo}`)
+      router.push(`/exito/${codigo}`)
     } catch (e: unknown) {
       console.error('[enviarProde] Error general:', e)
       const msg = e instanceof Error ? e.message : String(e)

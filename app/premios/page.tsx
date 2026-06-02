@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import Header from '@/components/ui/Header'
-import RayasDecorativas, { RayasHorizontales } from '@/components/ui/RayasDecorativos'
+import RayasDecorativas from '@/components/ui/RayasDecorativos'
 import { supabaseServer as supabase } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -28,12 +28,11 @@ async function getPremiosDB(): Promise<Record<number, { nombre: string; descripc
   }
 }
 
-// Premios placeholder — se reemplazarán desde el admin
 const PREMIOS_PLACEHOLDER = [
   {
     puesto: 1,
     emoji: '🥇',
-    nombre: 'Premio Mayor',
+    nombre: '1° Premio',
     descripcion: 'El gran ganador del Prode Carcelero 2026 se lleva el premio principal. ¡A acertar todos los resultados!',
     imagen: '/assets/images/club-8.jpeg',
     colorBorde: 'border-yellow-500/50',
@@ -44,7 +43,7 @@ const PREMIOS_PLACEHOLDER = [
   {
     puesto: 2,
     emoji: '🥈',
-    nombre: 'Segundo Premio',
+    nombre: '2° Premio',
     descripcion: 'El subcampeón del prode también tiene su recompensa bien merecida.',
     imagen: '/assets/images/club-9.jpeg',
     colorBorde: 'border-slate-400/50',
@@ -55,89 +54,12 @@ const PREMIOS_PLACEHOLDER = [
   {
     puesto: 3,
     emoji: '🥉',
-    nombre: 'Tercer Premio',
+    nombre: '3° Premio',
     descripcion: 'Tercer lugar en la tabla de posiciones. ¡El podio del Prode Carcelero!',
     imagen: '/assets/images/club-10.jpeg',
     colorBorde: 'border-orange-600/50',
     colorBg: 'from-orange-900/20 to-orange-800/10',
     colorTexto: 'text-orange-400',
-    size: 'mediano',
-  },
-  {
-    puesto: 4,
-    emoji: '🎖️',
-    nombre: '4° Puesto',
-    descripcion: 'Premio especial para el cuarto clasificado.',
-    imagen: null,
-    colorBorde: 'border-azul/40',
-    colorBg: 'from-azul/10 to-naval/20',
-    colorTexto: 'text-white/70',
-    size: 'chico',
-  },
-  {
-    puesto: 5,
-    emoji: '🎖️',
-    nombre: '5° Puesto',
-    descripcion: 'Premio especial para el quinto clasificado.',
-    imagen: null,
-    colorBorde: 'border-azul/40',
-    colorBg: 'from-azul/10 to-naval/20',
-    colorTexto: 'text-white/70',
-    size: 'chico',
-  },
-  {
-    puesto: 6,
-    emoji: '🎖️',
-    nombre: '6° Puesto',
-    descripcion: 'Premio especial para el sexto clasificado.',
-    imagen: null,
-    colorBorde: 'border-azul/40',
-    colorBg: 'from-azul/10 to-naval/20',
-    colorTexto: 'text-white/70',
-    size: 'chico',
-  },
-  {
-    puesto: 7,
-    emoji: '⭐',
-    nombre: 'Premio Sorpresa',
-    descripcion: 'Premio especial a definir por los organizadores.',
-    imagen: null,
-    colorBorde: 'border-dorado/30',
-    colorBg: 'from-dorado/10 to-naval/20',
-    colorTexto: 'text-dorado/70',
-    size: 'chico',
-  },
-  {
-    puesto: 8,
-    emoji: '⭐',
-    nombre: 'Premio Sorpresa',
-    descripcion: 'Premio especial a definir por los organizadores.',
-    imagen: null,
-    colorBorde: 'border-dorado/30',
-    colorBg: 'from-dorado/10 to-naval/20',
-    colorTexto: 'text-dorado/70',
-    size: 'chico',
-  },
-  {
-    puesto: 9,
-    emoji: '⭐',
-    nombre: 'Premio Sorpresa',
-    descripcion: 'Premio especial a definir por los organizadores.',
-    imagen: null,
-    colorBorde: 'border-dorado/30',
-    colorBg: 'from-dorado/10 to-naval/20',
-    colorTexto: 'text-dorado/70',
-    size: 'chico',
-  },
-  {
-    puesto: 10,
-    emoji: '🦁',
-    nombre: 'Premio El León',
-    descripcion: 'Premio especial del Club San Carlos. El Carcelero premia a quien más se esforzó.',
-    imagen: '/assets/images/club-11.jpeg',
-    colorBorde: 'border-dorado/50',
-    colorBg: 'from-dorado/15 to-naval/20',
-    colorTexto: 'text-dorado',
     size: 'mediano',
   },
 ] as const
@@ -217,23 +139,6 @@ export default async function PremiosPage() {
           <PremioCard premio={premios[1]} />
           <PremioCard premio={premios[2]} />
         </div>
-
-        <RayasHorizontales className="my-4" />
-
-        {/* 4° a 9° — grid compacto */}
-        <div>
-          <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest text-center mb-4">Otros premios</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {premios.slice(3, 9).map(p => (
-              <PremioChico key={p.puesto} premio={p} />
-            ))}
-          </div>
-        </div>
-
-        <RayasHorizontales className="my-4" />
-
-        {/* Premio especial */}
-        <PremioCard premio={premios[9]} />
       </section>
 
       {/* Banner rayas azul-blanco */}

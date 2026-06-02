@@ -804,7 +804,7 @@ function TabPremios({ adminPass }: { adminPass: string }) {
     }), 2000)
   }
 
-  const EMOJIS = ['🥇', '🥈', '🥉', '🎖️', '🎖️', '🎖️', '⭐', '⭐', '⭐', '🦁']
+  const EMOJIS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
   return (
     <div className="space-y-4">
@@ -815,17 +815,17 @@ function TabPremios({ adminPass }: { adminPass: string }) {
 
       {loading ? (
         <div className="text-center py-8 text-white/40">Cargando...</div>
-      ) : premios.length === 0 ? (
+      ) : premios.filter(p => p.puesto <= 3).length === 0 ? (
         <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-xl p-4 text-sm text-yellow-300">
           <p className="font-semibold mb-1">⚠️ Tabla de premios no encontrada</p>
           <p className="text-yellow-300/70">Ejecutá el schema.sql actualizado en Supabase para crear la tabla premios.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {premios.map((p, idx) => (
+          {premios.filter(p => p.puesto <= 3).map((p) => (
             <div key={p.puesto} className="bg-naval rounded-xl border border-azul/20 p-4">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xl">{EMOJIS[idx] ?? '🎁'}</span>
+                <span className="text-xl">{EMOJIS[p.puesto] ?? '🎁'}</span>
                 <span className="text-dorado font-black text-sm">{p.puesto}° Puesto</span>
               </div>
               <div className="space-y-2">
