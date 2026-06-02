@@ -352,6 +352,7 @@ function TabPartidos({ adminPass }: { adminPass: string }) {
   const [editando, setEditando] = useState<number | null>(null)
   const [resultados, setResultados] = useState<Record<number, { local: string; visitante: string }>>({})
   const [guardando, setGuardando] = useState<number | null>(null)
+  const [reseteando, setReseteando] = useState<number | null>(null)
   const [errorPartido, setErrorPartido] = useState<Record<number, string>>({})  // eslint-disable-line @typescript-eslint/no-unused-vars
   const [faseTab, setFaseTab] = useState('grupos')
 
@@ -391,6 +392,24 @@ function TabPartidos({ adminPass }: { adminPass: string }) {
     ))
     setEditando(null)
     setGuardando(null)
+  }
+
+  const resetearResultado = async (partidoId: number) => {
+    setReseteando(partidoId)
+    const res = await fetch('/api/admin/partidos', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPass },
+      body: JSON.stringify({ id: partidoId }),
+    })
+    if (res.ok) {
+      setPartidos(prev => prev.map(p =>
+        p.id === partidoId
+          ? { ...p, jugado: false, goles_local_real: undefined, goles_visitante_real: undefined }
+          : p
+      ))
+      setEditando(null)
+    }
+    setReseteando(null)
   }
 
   const fases = ['grupos', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final']
@@ -471,6 +490,15 @@ function TabPartidos({ adminPass }: { adminPass: string }) {
                   <button onClick={() => setEditando(null)} className="text-white/40 px-2 py-2 text-sm hover:text-white">
                     Cancelar
                   </button>
+                  {p.jugado && (
+                    <button
+                      onClick={() => resetearResultado(p.id)}
+                      disabled={reseteando === p.id}
+                      className="text-red-400 border border-red-800/50 px-3 py-2 rounded-lg text-sm hover:bg-red-900/30 disabled:opacity-50"
+                    >
+                      {reseteando === p.id ? '...' : 'Resetear'}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <button

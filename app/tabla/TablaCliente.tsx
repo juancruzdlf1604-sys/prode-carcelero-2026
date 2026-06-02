@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import { calcularPuntosGrupo, calcularPuntosBonus } from '@/lib/puntos'
+import { calcularPuntosBonus } from '@/lib/puntos'
 import type { Bonus, ResultadosBonus } from '@/lib/types'
 
 interface EntradaTabla {
@@ -22,29 +22,25 @@ export default function TablaCliente() {
   const calcular = async () => {
     const [
       { data: participantes },
-      { data: pronosticosGrupos },
-      { data: partidos },
+      { data: puntosRows },
       { data: bonuses },
       { data: resultBonus },
     ] = await Promise.all([
       supabase.from('participantes').select('id, codigo, nombre, apellido').eq('pago_confirmado', true).eq('eliminado', false),
-      supabase.from('pronosticos_grupos').select('participante_id, partido_id, goles_local, goles_visitante'),
-      supabase.from('partidos').select('id, goles_local_real, goles_visitante_real, jugado').eq('jugado', true),
+      supabase.from('puntos_partidos').select('participante_id, puntos'),
       supabase.from('bonus').select('*'),
       supabase.from('resultados_bonus').select('*').eq('id', 1).single(),
     ])
 
     if (!participantes) return
 
-    const partidosMap = new Map(
-      (partidos || []).map(p => [p.id, p])
-    )
-
-    const pronMap = new Map<string, Array<{ partido_id: number; goles_local: number; goles_visitante: number }>>()
-    pronosticosGrupos?.forEach(pg => {
-      const arr = pronMap.get(pg.participante_id) || []
-      arr.push(pg)
-      pronMap.set(pg.participante_id, arr)
+    // Build a map of participante_id -> { total puntos, exactos count }
+    const puntosMap = new Map<string, { total: number; exactos: number }>()
+    puntosRows?.forEach(row => {
+      const entry = puntosMap.get(row.participante_id) ?? { total: 0, exactos: 0 }
+      entry.total += row.puntos
+      if (row.puntos === 10) entry.exactos++
+      puntosMap.set(row.participante_id, entry)
     })
 
     const bonusMap = new Map<string, Bonus>()
@@ -53,27 +49,18 @@ export default function TablaCliente() {
     const rb = resultBonus as ResultadosBonus | null
 
     const nuevaTabla: EntradaTabla[] = participantes.map(p => {
-      let puntos = 0
-      let exactos = 0
-
-      const prons = pronMap.get(p.id) || []
-      prons.forEach(pg => {
-        const partido = partidosMap.get(pg.partido_id)
-        if (!partido) return
-        const pts = calcularPuntosGrupo(
-          { goles_local: pg.goles_local, goles_visitante: pg.goles_visitante },
-          { goles_local_real: partido.goles_local_real, goles_visitante_real: partido.goles_visitante_real }
-        )
-        puntos += pts
-        if (pts === 10) exactos++
-      })
+      const pts = puntosMap.get(p.id) ?? { total: 0, exactos: 0 }
 
       const bonus = bonusMap.get(p.id)
-      if (bonus && rb) {
-        puntos += calcularPuntosBonus(bonus, rb)
-      }
+      const pts_bonus = bonus && rb ? calcularPuntosBonus(bonus, rb) : 0
 
-      return { codigo: p.codigo, nombre: p.nombre, apellido: p.apellido, puntos, exactos }
+      return {
+        codigo: p.codigo,
+        nombre: p.nombre,
+        apellido: p.apellido,
+        puntos: pts.total + pts_bonus,
+        exactos: pts.exactos,
+      }
     })
 
     nuevaTabla.sort((a, b) => b.puntos - a.puntos || b.exactos - a.exactos)
@@ -87,7 +74,7 @@ export default function TablaCliente() {
 
     const channel = supabase
       .channel('tabla-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, calcular)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'puntos_partidos' }, calcular)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participantes' }, calcular)
       .subscribe()
 
