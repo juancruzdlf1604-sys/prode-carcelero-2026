@@ -142,7 +142,6 @@ export default function FormularioProde() {
 
       const pronosticosElim = Object.values(datos.eliminatorias).map(e => ({
         participante_id: participante.id,
-        ronda: e.fase,
         fase: e.fase,
         slot: e.slot,
         equipo_local: e.equipo_local,
@@ -152,7 +151,10 @@ export default function FormularioProde() {
       }))
       if (pronosticosElim.length > 0) {
         const { error: errElim } = await supabase.from('pronosticos_eliminatorias').insert(pronosticosElim)
-        if (errElim) console.error('[enviarProde] Error al insertar pronosticos_eliminatorias:', errElim)
+        if (errElim) {
+          console.error('[enviarProde] Error al insertar pronosticos_eliminatorias:', errElim)
+          throw new Error(`Error al guardar eliminatorias: ${errElim.message}`)
+        }
         console.log('[enviarProde] Pronósticos eliminatorias insertados:', pronosticosElim.length)
       }
 
