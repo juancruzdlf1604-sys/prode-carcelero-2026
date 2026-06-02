@@ -1,7 +1,7 @@
 import { supabaseAdmin as supabase } from '@/lib/supabase/service'
 import { notFound } from 'next/navigation'
 import Header from '@/components/ui/Header'
-import { calcularPuntosGrupo, calcularPuntosBonus } from '@/lib/puntos'
+import { calcularPuntosBonus } from '@/lib/puntos'
 import MiProdeCliente, {
   type GrupoItem,
   type PartidoGrupoItem,
@@ -39,6 +39,7 @@ export default async function MiProdePage({ params }: Props) {
     { data: pronosticosGruposRaw },
     { data: pronosticosElim, error: elimError },
     { data: resultBonus },
+    { data: puntosPartidos },
   ] = await Promise.all([
     supabase.from('bonus').select('*').eq('participante_id', participante.id).single(),
     supabase
@@ -50,6 +51,10 @@ export default async function MiProdePage({ params }: Props) {
       .select('*')
       .eq('participante_id', participante.id),
     supabase.from('resultados_bonus').select('*').eq('id', 1).single(),
+    supabase
+      .from('puntos_partidos')
+      .select('partido_id, puntos')
+      .eq('participante_id', participante.id),
   ])
 
   console.log('[mi-prode] participante_id:', participante.id)
@@ -72,6 +77,10 @@ export default async function MiProdePage({ params }: Props) {
     partidos?.forEach(p => partidosMap.set(p.id, p))
   }
 
+  // Build puntos map from pre-calculated puntos_partidos
+  const puntosMap = new Map<number, number>()
+  puntosPartidos?.forEach(pp => puntosMap.set(pp.partido_id, pp.puntos))
+
   // Build group data
   let puntosGrupos = 0
   let exactosGrupos = 0
@@ -82,11 +91,8 @@ export default async function MiProdePage({ params }: Props) {
     if (!partido) return
 
     let puntos: number | null = null
-    if (partido.jugado && partido.goles_local_real !== null && partido.goles_visitante_real !== null) {
-      puntos = calcularPuntosGrupo(
-        { goles_local: pg.goles_local, goles_visitante: pg.goles_visitante },
-        { goles_local_real: partido.goles_local_real, goles_visitante_real: partido.goles_visitante_real }
-      )
+    if (partido.jugado) {
+      puntos = puntosMap.get(pg.partido_id) ?? 0
       puntosGrupos += puntos
       if (puntos === 10) exactosGrupos++
     }
