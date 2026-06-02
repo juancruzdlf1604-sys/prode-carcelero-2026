@@ -57,6 +57,8 @@ export default async function MiProdePage({ params }: Props) {
       .eq('participante_id', participante.id),
   ])
 
+  console.log('[mi-prode] participante.id:', participante.id, 'puntosPartidosRows:', JSON.stringify(puntosPartidosRows?.slice(0, 3)), 'pronosticosGrupos.length:', pronosticosGruposRaw?.length)
+
   // Fetch partido details — use Number() on all IDs to avoid string/number Map key mismatch
   const partidosMap = new Map<number, {
     id: number; equipo_local: string; equipo_visitante: string
@@ -82,15 +84,17 @@ export default async function MiProdePage({ params }: Props) {
   let exactosGrupos = 0
   const grupoMap = new Map<string, PartidoGrupoItem[]>()
 
-  pronosticosGruposRaw?.forEach(pg => {
-    const partido = partidosMap.get(Number(pg.partido_id))
+  pronosticosGruposRaw?.forEach((pg, idx) => {
+    const pgIdNum = Number(pg.partido_id)
+    const partido = partidosMap.get(pgIdNum)
+    if (idx < 3) console.log('[mi-prode] pg[' + idx + '] partido_id:', pg.partido_id, '→ num:', pgIdNum, 'found:', !!partido, 'jugado:', partido?.jugado, 'gl_real:', partido?.goles_local_real, 'hasPuntos:', puntosPartidosMap.has(pgIdNum))
     if (!partido) return
 
     let puntos: number | null = null
 
     // Prefer pre-calculated puntos_partidos; fall back to on-the-fly
-    if (puntosPartidosMap.has(Number(pg.partido_id))) {
-      puntos = puntosPartidosMap.get(Number(pg.partido_id))!
+    if (puntosPartidosMap.has(pgIdNum)) {
+      puntos = puntosPartidosMap.get(pgIdNum)!
       puntosGrupos += puntos
       if (puntos === 10) exactosGrupos++
     } else if (partido.jugado && partido.goles_local_real !== null && partido.goles_visitante_real !== null) {
