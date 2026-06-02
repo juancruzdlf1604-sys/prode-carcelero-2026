@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/service'
 import { mapTeamName, normalizeTeamName } from '@/lib/team-names'
+import { calcularPuntosGrupo } from '@/lib/puntos'
 
 const FOOTBALL_API_URL = 'https://api.football-data.org/v4/competitions/WC/matches'
 
@@ -137,7 +138,26 @@ export async function GET(req: NextRequest) {
 
       if (updateErr) {
         errores.push(`Error actualizando id=${partido.id}: ${updateErr.message}`)
-      } else if (isFinished) {
+      } else if (isFinished && golesLocal !== null && golesVisitante !== null) {
+        // Recalculate puntos_partidos for this match
+        const { data: pronosticos } = await supabaseAdmin
+          .from('pronosticos_grupos')
+          .select('participante_id, goles_local, goles_visitante')
+          .eq('partido_id', partido.id)
+
+        if (pronosticos && pronosticos.length > 0) {
+          await supabaseAdmin.from('puntos_partidos').delete().eq('partido_id', partido.id)
+          const rows = pronosticos.map(pg => ({
+            participante_id: pg.participante_id,
+            partido_id: partido.id,
+            puntos: calcularPuntosGrupo(
+              { goles_local: pg.goles_local, goles_visitante: pg.goles_visitante },
+              { goles_local_real: golesLocal, goles_visitante_real: golesVisitante }
+            ),
+          }))
+          await supabaseAdmin.from('puntos_partidos').insert(rows)
+        }
+
         actualizados.push({
           id: partido.id,
           partido: `${partido.equipo_local} vs ${partido.equipo_visitante}`,
