@@ -51,6 +51,7 @@ export interface Bonus {
   goleador: string
   guante_oro: string
   mejor_joven: string
+  mejor_jugador?: string
 }
 
 export interface ResultadosBonus {
@@ -59,6 +60,7 @@ export interface ResultadosBonus {
   goleador?: string
   guante_oro?: string
   mejor_joven?: string
+  mejor_jugador?: string
 }
 
 export interface Configuracion {

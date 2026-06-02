@@ -675,7 +675,7 @@ function TabTabla() {
 
 function TabBonus({ adminPass }: { adminPass: string }) {
   const [values, setValues] = useState({
-    campeon: '', subcampeon: '', goleador: '', guante_oro: '', mejor_joven: '',
+    campeon: '', subcampeon: '', goleador: '', guante_oro: '', mejor_joven: '', mejor_jugador: '',
   })
   const [guardado, setGuardado] = useState(false)
   const [guardando, setGuardando] = useState(false)
@@ -690,6 +690,7 @@ function TabBonus({ adminPass }: { adminPass: string }) {
           goleador: data.goleador || '',
           guante_oro: data.guante_oro || '',
           mejor_joven: data.mejor_joven || '',
+          mejor_jugador: data.mejor_jugador || '',
         })
       })
   }, [])
@@ -718,6 +719,7 @@ function TabBonus({ adminPass }: { adminPass: string }) {
     { key: 'goleador', label: 'Goleador del torneo', emoji: '⚽', placeholder: 'Ej: Cristiano Ronaldo' },
     { key: 'guante_oro', label: 'Guante de Oro', emoji: '🧤', placeholder: 'Ej: Emiliano Martínez' },
     { key: 'mejor_joven', label: 'Mejor Jugador Joven', emoji: '⭐', placeholder: 'Ej: Lamine Yamal' },
+    { key: 'mejor_jugador', label: 'Mejor Jugador (Balón de Oro)', emoji: '🏅', placeholder: 'Ej: Lamine Yamal' },
   ]
 
   return (

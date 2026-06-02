@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { BANDERAS } from '@/lib/types'
+import { coincideBonus } from '@/lib/puntos'
 import Link from 'next/link'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ export interface BonusData {
   goleador: string
   guante_oro: string
   mejor_joven: string
+  mejor_jugador?: string
 }
 
 export interface ResultBonusData {
@@ -51,6 +53,7 @@ export interface ResultBonusData {
   goleador?: string | null
   guante_oro?: string | null
   mejor_joven?: string | null
+  mejor_jugador?: string | null
 }
 
 interface Props {
@@ -147,11 +150,12 @@ export default function MiProdeCliente({
             )}
           </div>
           <div className="divide-y divide-azul/10">
-            <BonusRow emoji="🏆" label="Campeón" value={bonus.campeon} real={resultBonus?.campeon} pts={50} />
-            <BonusRow emoji="🥈" label="Subcampeón" value={bonus.subcampeon} real={resultBonus?.subcampeon} pts={25} />
-            <BonusRow emoji="⚽" label="Goleador" value={bonus.goleador} real={resultBonus?.goleador} pts={20} />
-            <BonusRow emoji="🧤" label="Guante de Oro" value={bonus.guante_oro} real={resultBonus?.guante_oro} pts={15} />
-            <BonusRow emoji="⭐" label="Mejor Joven" value={bonus.mejor_joven} real={resultBonus?.mejor_joven} pts={15} />
+            <BonusRow emoji="🏆" label="Campeón" value={bonus.campeon} real={resultBonus?.campeon} pts={100} />
+            <BonusRow emoji="🥈" label="Subcampeón" value={bonus.subcampeon} real={resultBonus?.subcampeon} pts={50} />
+            <BonusRow emoji="⚽" label="Goleador" value={bonus.goleador} real={resultBonus?.goleador} pts={50} />
+            <BonusRow emoji="🧤" label="Guante de Oro" value={bonus.guante_oro} real={resultBonus?.guante_oro} pts={50} />
+            <BonusRow emoji="⭐" label="Mejor Joven" value={bonus.mejor_joven} real={resultBonus?.mejor_joven} pts={50} />
+            <BonusRow emoji="🏅" label="Balón de Oro" value={bonus.mejor_jugador ?? ''} real={resultBonus?.mejor_jugador} pts={50} />
           </div>
         </div>
       )}
@@ -319,7 +323,7 @@ function BonusRow({
 }: {
   emoji: string; label: string; value: string; real?: string | null; pts: number
 }) {
-  const correcto = real && value.trim().toLowerCase() === real.trim().toLowerCase()
+  const correcto = real ? coincideBonus(value, real) : false
   const incorrecto = real && !correcto
   return (
     <div className="px-4 py-3 flex justify-between items-center gap-3">

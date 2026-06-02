@@ -21,6 +21,7 @@ export interface DatosProde {
     goleador: string
     guante_oro: string
     mejor_joven: string
+    mejor_jugador: string
   }
   pronosticos: Record<number, { goles_local: number; goles_visitante: number }>
   eliminatorias: Record<string, {
@@ -40,7 +41,7 @@ const datosIniciales: DatosProde = {
   nombre: '',
   apellido: '',
   whatsapp: '',
-  bonus: { campeon: '', subcampeon: '', goleador: '', guante_oro: '', mejor_joven: '' },
+  bonus: { campeon: '', subcampeon: '', goleador: '', guante_oro: '', mejor_joven: '', mejor_jugador: '' },
   pronosticos: {},
   eliminatorias: {},
 }

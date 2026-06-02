@@ -17,6 +17,7 @@ const BONUS_CONFIG: Array<{ key: string; label: string; emoji: string; puntos: n
   { key: 'goleador', label: 'Goleador del torneo', emoji: '⚽', puntos: 50, esJugador: true },
   { key: 'guante_oro', label: 'Guante de Oro (mejor arquero)', emoji: '🧤', puntos: 50, esJugador: true },
   { key: 'mejor_joven', label: 'Mejor Jugador Joven', emoji: '⭐', puntos: 50, esJugador: true },
+  { key: 'mejor_jugador', label: 'Mejor Jugador (Balón de Oro)', emoji: '🏅', puntos: 50, esJugador: true },
 ]
 
 export default function PasoBonus({ datos, onChange, onSiguiente, onAnterior }: Props) {

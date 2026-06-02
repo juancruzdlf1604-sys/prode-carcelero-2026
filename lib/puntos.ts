@@ -4,6 +4,14 @@ export function normalizarString(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 }
 
+// Partial match: "Yamal" coincides with "Lamine Yamal" and vice versa
+export function coincideBonus(a: string, b: string): boolean {
+  if (!a || !b) return false
+  const na = normalizarString(a)
+  const nb = normalizarString(b)
+  return na === nb || na.includes(nb) || nb.includes(na)
+}
+
 export function calcularPuntosGrupo(
   pronostico: { goles_local: number; goles_visitante: number },
   real: { goles_local_real: number; goles_visitante_real: number }
@@ -45,10 +53,11 @@ export function calcularPuntosEliminatoria(
 
 export function calcularPuntosBonus(bonus: Bonus, resultados: ResultadosBonus): number {
   let puntos = 0
-  if (resultados.campeon && bonus.campeon === resultados.campeon) puntos += 100
-  if (resultados.subcampeon && bonus.subcampeon === resultados.subcampeon) puntos += 50
-  if (resultados.goleador && normalizarString(bonus.goleador) === normalizarString(resultados.goleador)) puntos += 50
-  if (resultados.guante_oro && normalizarString(bonus.guante_oro) === normalizarString(resultados.guante_oro)) puntos += 50
-  if (resultados.mejor_joven && normalizarString(bonus.mejor_joven) === normalizarString(resultados.mejor_joven)) puntos += 50
+  if (resultados.campeon && coincideBonus(bonus.campeon, resultados.campeon)) puntos += 100
+  if (resultados.subcampeon && coincideBonus(bonus.subcampeon, resultados.subcampeon)) puntos += 50
+  if (resultados.goleador && coincideBonus(bonus.goleador, resultados.goleador)) puntos += 50
+  if (resultados.guante_oro && coincideBonus(bonus.guante_oro, resultados.guante_oro)) puntos += 50
+  if (resultados.mejor_joven && coincideBonus(bonus.mejor_joven, resultados.mejor_joven)) puntos += 50
+  if (resultados.mejor_jugador && coincideBonus(bonus.mejor_jugador ?? '', resultados.mejor_jugador)) puntos += 50
   return puntos
 }
