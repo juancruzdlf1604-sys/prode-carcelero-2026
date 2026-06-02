@@ -58,6 +58,8 @@ export default async function MiProdePage({ params }: Props) {
   ])
 
   console.log('[mi-prode] participante_id:', participante.id)
+  console.log('[mi-prode] pronosticosGrupos count:', pronosticosGruposRaw?.length ?? 0)
+  console.log('[mi-prode] puntosPartidos:', JSON.stringify(puntosPartidos))
   console.log('[mi-prode] pronosticosElim count:', pronosticosElim?.length ?? 0)
   console.log('[mi-prode] pronosticosElim error:', elimError)
 
