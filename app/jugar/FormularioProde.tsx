@@ -148,6 +148,7 @@ export default function FormularioProde() {
         equipo_visitante: e.equipo_visitante,
         goles_local: e.goles_local ?? null,
         goles_visitante: e.goles_visitante ?? null,
+        ganador_penales: e.ganador || null,
       }))
       if (pronosticosElim.length > 0) {
         const { error: errElim } = await supabase.from('pronosticos_eliminatorias').insert(pronosticosElim)
