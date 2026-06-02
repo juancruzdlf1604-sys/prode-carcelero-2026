@@ -94,6 +94,10 @@ export default function MiProdeCliente({
     (sum: number, p: PuntosPartidoItem) => sum + p.puntos, 0
   )
   const totalPuntos = puntosGrupos + puntosBonus
+
+  console.log('CLIENT puntosPartidos:', JSON.stringify(puntosPartidos))
+  console.log('CLIENT puntosGrupos:', puntosGrupos)
+  console.log('CLIENT totalPuntos:', totalPuntos)
   const [openGrupos, setOpenGrupos] = useState<Set<string>>(new Set())
   const [openRondas, setOpenRondas] = useState<Set<string>>(new Set())
 
