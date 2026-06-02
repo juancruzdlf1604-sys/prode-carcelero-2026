@@ -156,6 +156,7 @@ export default async function HomePage() {
               <PuntosRow label="⚽ Goleador" puntos="50 pts" />
               <PuntosRow label="🧤 Guante de Oro" puntos="50 pts" />
               <PuntosRow label="⭐ Mejor Joven" puntos="50 pts" />
+              <PuntosRow label="🏅 Balón de Oro" puntos="50 pts" />
             </div>
           </div>
         </div>
