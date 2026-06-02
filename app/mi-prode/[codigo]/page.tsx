@@ -84,7 +84,7 @@ export default async function MiProdePage({ params }: Props) {
 
   // Build puntos map from pre-calculated puntos_partidos
   const puntosMap = new Map<number, number>()
-  puntosPartidos?.forEach(pp => puntosMap.set(pp.partido_id, pp.puntos))
+  puntosPartidos?.forEach(pp => puntosMap.set(Number(pp.partido_id), Number(pp.puntos)))
 
   // Build group data
   let puntosGrupos = 0
@@ -97,7 +97,7 @@ export default async function MiProdePage({ params }: Props) {
 
     let puntos: number | null = null
     if (partido.jugado) {
-      puntos = puntosMap.get(pg.partido_id) ?? 0
+      puntos = puntosMap.get(Number(pg.partido_id)) ?? 0
       puntosGrupos += puntos
       if (puntos === 10) exactosGrupos++
     }
