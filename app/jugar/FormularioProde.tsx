@@ -138,12 +138,13 @@ export default function FormularioProde() {
 
       const pronosticosElim = Object.values(datos.eliminatorias).map(e => ({
         participante_id: participante.id,
+        ronda: e.fase,
         fase: e.fase,
         slot: e.slot,
         equipo_local: e.equipo_local,
         equipo_visitante: e.equipo_visitante,
-        goles_local: e.goles_local || null,
-        goles_visitante: e.goles_visitante || null,
+        goles_local: e.goles_local ?? null,
+        goles_visitante: e.goles_visitante ?? null,
       }))
       if (pronosticosElim.length > 0) {
         const { error: errElim } = await supabase.from('pronosticos_eliminatorias').insert(pronosticosElim)
