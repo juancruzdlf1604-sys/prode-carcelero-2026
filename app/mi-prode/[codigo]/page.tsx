@@ -74,10 +74,11 @@ export default async function MiProdePage({ params }: Props) {
 
   if (pronosticosGruposRaw?.length) {
     const ids = pronosticosGruposRaw.map(pg => pg.partido_id)
-    const { data: partidos } = await supabase
+    const { data: partidos, error: partidosError } = await supabase
       .from('partidos')
       .select('id, equipo_local, equipo_visitante, goles_local_real, goles_visitante_real, jugado, grupo, ronda, fecha')
       .in('id', ids)
+    console.log('[mi-prode] partidos fetch:', partidos?.length ?? 0, 'error:', partidosError?.message ?? null)
     partidos?.forEach(p => partidosMap.set(p.id, p))
   }
 
@@ -152,6 +153,8 @@ export default async function MiProdePage({ params }: Props) {
         ganador_penales: (pe as any).ganador_penales ?? null,
       })),
     }))
+
+  console.log('[mi-prode] puntosGrupos:', puntosGrupos, 'exactos:', exactosGrupos, 'partidosMap.size:', partidosMap.size)
 
   const puntosBonus = bonus && resultBonus ? calcularPuntosBonus(bonus, resultBonus) : 0
   const totalPuntos = puntosGrupos + puntosBonus
