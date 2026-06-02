@@ -164,8 +164,7 @@ export default async function MiProdePage({ params }: Props) {
       <Header />
       <MiProdeCliente
         participante={{ nombre: participante.nombre, apellido: participante.apellido, codigo: participante.codigo }}
-        totalPuntos={totalPuntos}
-        puntosGrupos={puntosGrupos}
+        puntosPartidos={puntosPartidosRows ?? []}
         puntosBonus={puntosBonus}
         exactosGrupos={exactosGrupos}
         grupos={grupos}
