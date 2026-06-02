@@ -47,7 +47,7 @@ export default async function MiProdePage({ params }: Props) {
       .eq('participante_id', participante.id),
     supabase
       .from('pronosticos_eliminatorias')
-      .select('ronda, equipo_local, equipo_visitante, goles_local, goles_visitante')
+      .select('fase, equipo_local, equipo_visitante, goles_local, goles_visitante')
       .eq('participante_id', participante.id),
     supabase.from('resultados_bonus').select('*').eq('id', 1).single(),
   ])
@@ -121,9 +121,9 @@ export default async function MiProdePage({ params }: Props) {
   // Build eliminatorias data
   const rondasMap = new Map<string, typeof pronosticosElim>()
   pronosticosElim?.forEach(pe => {
-    const arr = rondasMap.get(pe.ronda) || []
+    const arr = rondasMap.get(pe.fase) || []
     arr.push(pe)
-    rondasMap.set(pe.ronda, arr)
+    rondasMap.set(pe.fase, arr)
   })
 
   const rondas: RondaItem[] = RONDAS_ORDEN

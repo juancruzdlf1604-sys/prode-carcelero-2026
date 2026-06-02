@@ -39,7 +39,11 @@ export default async function ExitoPage({ params }: Props) {
   const mensajeWa = encodeURIComponent(
     `Hola! Completé el Prode Carcelero 2026. Mi código es ${participante.codigo}. Te mando el comprobante de transferencia de ${precioFormateado}.`
   )
+  const mensajeWaEfectivo = encodeURIComponent(
+    `Hola! Completé el Prode Carcelero 2026. Mi código es ${participante.codigo}. Voy a pagar en efectivo, ¿coordinamos?`
+  )
   const waUrl = waAdmin ? `https://wa.me/${waAdmin}?text=${mensajeWa}` : null
+  const waUrlEfectivo = waAdmin ? `https://wa.me/${waAdmin}?text=${mensajeWaEfectivo}` : null
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -123,6 +127,23 @@ export default async function ExitoPage({ params }: Props) {
         ) : (
           <div className="w-full bg-green-900/20 border border-green-700/30 rounded-2xl px-5 py-4 text-center mb-4">
             <p className="text-green-300/70 text-sm">Mandá el comprobante de transferencia al organizador por WhatsApp.</p>
+          </div>
+        )}
+
+        {/* Efectivo */}
+        {waUrlEfectivo ? (
+          <a
+            href={waUrlEfectivo}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-3 bg-naval hover:bg-azul/30 active:scale-95 transition-all text-white/80 font-bold py-3.5 rounded-2xl text-sm border border-azul/40 mb-4"
+          >
+            <span>💵</span>
+            ¿Pagás en efectivo? Coordiná por WhatsApp
+          </a>
+        ) : (
+          <div className="w-full bg-naval border border-azul/30 rounded-2xl px-5 py-4 text-center mb-4">
+            <p className="text-white/40 text-sm">💵 ¿Pagás en efectivo? Coordiná con el organizador.</p>
           </div>
         )}
 

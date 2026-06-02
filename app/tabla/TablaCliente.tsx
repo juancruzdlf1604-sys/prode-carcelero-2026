@@ -91,19 +91,32 @@ export default function TablaCliente() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'participantes' }, calcular)
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    const interval = setInterval(calcular, 30000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(interval)
+    }
   }, [])
 
   return (
     <div className="max-w-2xl mx-auto w-full px-4 py-6 space-y-4">
-      <div>
-        <h1 className="text-2xl font-black text-dorado">🏆 Tabla de Posiciones</h1>
-        <p className="text-white/40 text-xs mt-0.5">
-          {ultimaActualizacion
-            ? `Actualizado ${ultimaActualizacion.toLocaleTimeString('es-AR')}`
-            : 'Actualizando...'}
-          {' '}· Tiempo real
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-dorado">🏆 Tabla de Posiciones</h1>
+          <p className="text-white/40 text-xs mt-0.5">
+            {ultimaActualizacion
+              ? `Actualizado ${ultimaActualizacion.toLocaleTimeString('es-AR')}`
+              : 'Actualizando...'}
+            {' '}· Tiempo real
+          </p>
+        </div>
+        <button
+          onClick={calcular}
+          className="flex-shrink-0 text-xs text-dorado/70 border border-dorado/30 px-3 py-1.5 rounded-lg hover:bg-dorado/10 transition-colors mt-1"
+        >
+          ↻ Actualizar
+        </button>
       </div>
 
       {loading ? (
