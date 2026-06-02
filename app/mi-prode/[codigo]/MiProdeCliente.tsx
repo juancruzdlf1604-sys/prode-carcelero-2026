@@ -57,14 +57,10 @@ export interface ResultBonusData {
   mejor_jugador?: string | null
 }
 
-export interface PuntosPartidoItem {
-  partido_id: number
-  puntos: number
-}
-
 interface Props {
   participante: { nombre: string; apellido: string; codigo: string }
-  puntosPartidos: PuntosPartidoItem[]
+  totalPuntos: number
+  puntosGrupos: number
   puntosBonus: number
   exactosGrupos: number
   grupos: GrupoItem[]
@@ -87,17 +83,10 @@ function formatFecha(fecha: string | null): string {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function MiProdeCliente({
-  participante, puntosPartidos, puntosBonus, exactosGrupos,
+  participante, totalPuntos, puntosGrupos, puntosBonus, exactosGrupos,
   grupos, rondas, bonus, resultBonus,
 }: Props) {
-  const puntosGrupos = (puntosPartidos ?? []).reduce(
-    (sum: number, p: PuntosPartidoItem) => sum + p.puntos, 0
-  )
-  const totalPuntos = puntosGrupos + puntosBonus
-
-  console.log('CLIENT puntosPartidos:', JSON.stringify(puntosPartidos))
-  console.log('CLIENT puntosGrupos:', puntosGrupos)
-  console.log('CLIENT totalPuntos:', totalPuntos)
+  console.log('[cliente] totalPuntos prop:', totalPuntos, 'puntosGrupos:', puntosGrupos, 'puntosBonus:', puntosBonus)
   const [openGrupos, setOpenGrupos] = useState<Set<string>>(new Set())
   const [openRondas, setOpenRondas] = useState<Set<string>>(new Set())
 

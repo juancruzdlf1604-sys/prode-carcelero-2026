@@ -57,7 +57,7 @@ export default async function MiProdePage({ params }: Props) {
       .eq('participante_id', participante.id),
   ])
 
-  console.log('[mi-prode] participante.id:', participante.id, 'puntosPartidosRows:', JSON.stringify(puntosPartidosRows?.slice(0, 3)), 'pronosticosGrupos.length:', pronosticosGruposRaw?.length)
+  console.log('[page] puntosPartidosRows:', JSON.stringify(puntosPartidosRows))
 
   // Fetch partido details — use Number() on all IDs to avoid string/number Map key mismatch
   const partidosMap = new Map<number, {
@@ -79,10 +79,12 @@ export default async function MiProdePage({ params }: Props) {
   const puntosPartidosMap = new Map<number, number>()
   puntosPartidosRows?.forEach(pp => puntosPartidosMap.set(Number(pp.partido_id), Number(pp.puntos)))
 
-  const puntosGrupos = puntosPartidosRows?.reduce((sum, pp) => sum + Number(pp.puntos), 0) ?? 0
+  const totalPuntosGrupos = (puntosPartidosRows ?? []).reduce(
+    (sum, p) => sum + (p.puntos ?? 0), 0
+  )
   const exactosGrupos = puntosPartidosRows?.filter(pp => Number(pp.puntos) === 10).length ?? 0
 
-  console.log('[mi-prode] puntosGrupos from puntos_partidos:', puntosGrupos, 'rows:', puntosPartidosRows?.length ?? 0)
+  console.log('[page] totalPuntosGrupos:', totalPuntosGrupos, 'rows:', puntosPartidosRows?.length ?? 0)
 
   // Build group display data
   const grupoMap = new Map<string, PartidoGrupoItem[]>()
@@ -155,17 +157,18 @@ export default async function MiProdePage({ params }: Props) {
     }))
 
   const puntosBonus = bonus && resultBonus ? calcularPuntosBonus(bonus, resultBonus) : 0
-  const totalPuntos = puntosGrupos + puntosBonus
+  const totalPuntos = totalPuntosGrupos + puntosBonus
 
-  console.log('[mi-prode] FINAL total:', totalPuntos, 'grupos:', puntosGrupos, 'bonus:', puntosBonus, 'partidosMap:', partidosMap.size)
+  console.log('[page] FINAL totalPuntos:', totalPuntos, 'grupos:', totalPuntosGrupos, 'bonus:', puntosBonus)
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <MiProdeCliente
         participante={{ nombre: participante.nombre, apellido: participante.apellido, codigo: participante.codigo }}
-        puntosPartidos={puntosPartidosRows ?? []}
+        puntosGrupos={totalPuntosGrupos}
         puntosBonus={puntosBonus}
+        totalPuntos={totalPuntos}
         exactosGrupos={exactosGrupos}
         grupos={grupos}
         rondas={rondas}
