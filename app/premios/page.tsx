@@ -278,13 +278,3 @@ function PremioCard({ premio }: { premio: PremioData }) {
   )
 }
 
-function PremioChico({ premio }: { premio: PremioData }) {
-  return (
-    <div className={`bg-gradient-to-br ${premio.colorBg} border ${premio.colorBorde} rounded-xl p-3 text-center`}>
-      <div className="text-2xl mb-1">{premio.emoji}</div>
-      <div className={`text-xs font-black uppercase ${premio.colorTexto} mb-1`}>{premio.puesto}° Puesto</div>
-      <div className="text-white/60 text-xs font-semibold">{premio.nombre}</div>
-      <div className="text-white/30 text-xs mt-1 italic">A confirmar</div>
-    </div>
-  )
-}
