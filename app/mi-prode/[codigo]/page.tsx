@@ -1,7 +1,7 @@
 import { supabaseAdmin as supabase } from '@/lib/supabase/service'
 import { notFound } from 'next/navigation'
 import Header from '@/components/ui/Header'
-import { calcularPuntosBonus } from '@/lib/puntos'
+import { calcularPuntosGrupo, calcularPuntosBonus } from '@/lib/puntos'
 import MiProdeCliente, {
   type GrupoItem,
   type PartidoGrupoItem,
@@ -37,9 +37,8 @@ export default async function MiProdePage({ params }: Props) {
   const [
     { data: bonus },
     { data: pronosticosGruposRaw },
-    { data: pronosticosElim, error: elimError },
+    { data: pronosticosElim },
     { data: resultBonus },
-    { data: puntosPartidos, error: ppError },
   ] = await Promise.all([
     supabase.from('bonus').select('*').eq('participante_id', participante.id).single(),
     supabase
@@ -51,21 +50,9 @@ export default async function MiProdePage({ params }: Props) {
       .select('*')
       .eq('participante_id', participante.id),
     supabase.from('resultados_bonus').select('*').eq('id', 1).single(),
-    supabase
-      .from('puntos_partidos')
-      .select('partido_id, puntos')
-      .eq('participante_id', participante.id),
   ])
 
-  console.log('[mi-prode] DEBUG', JSON.stringify({
-    participante_id: participante.id,
-    grupos: pronosticosGruposRaw?.length ?? 0,
-    puntosPartidos,
-    ppError: ppError?.message ?? null,
-    elimError: elimError?.message ?? null,
-  }))
-
-  // Fetch partido details for the group pronosticos
+  // Fetch partido details — use Number() on all IDs to avoid string/number Map key mismatch
   const partidosMap = new Map<number, {
     id: number; equipo_local: string; equipo_visitante: string
     goles_local_real: number | null; goles_visitante_real: number | null
@@ -73,31 +60,29 @@ export default async function MiProdePage({ params }: Props) {
   }>()
 
   if (pronosticosGruposRaw?.length) {
-    const ids = pronosticosGruposRaw.map(pg => pg.partido_id)
-    const { data: partidos, error: partidosError } = await supabase
+    const ids = pronosticosGruposRaw.map(pg => Number(pg.partido_id))
+    const { data: partidos } = await supabase
       .from('partidos')
       .select('id, equipo_local, equipo_visitante, goles_local_real, goles_visitante_real, jugado, grupo, ronda, fecha')
       .in('id', ids)
-    console.log('[mi-prode] partidos fetch:', partidos?.length ?? 0, 'error:', partidosError?.message ?? null)
-    partidos?.forEach(p => partidosMap.set(p.id, p))
+    partidos?.forEach(p => partidosMap.set(Number(p.id), p))
   }
 
-  // Build puntos map from pre-calculated puntos_partidos
-  const puntosMap = new Map<number, number>()
-  puntosPartidos?.forEach(pp => puntosMap.set(Number(pp.partido_id), Number(pp.puntos)))
-
-  // Build group data
+  // Build group data with on-the-fly calculation
   let puntosGrupos = 0
   let exactosGrupos = 0
   const grupoMap = new Map<string, PartidoGrupoItem[]>()
 
   pronosticosGruposRaw?.forEach(pg => {
-    const partido = partidosMap.get(pg.partido_id)
+    const partido = partidosMap.get(Number(pg.partido_id))
     if (!partido) return
 
     let puntos: number | null = null
-    if (partido.jugado) {
-      puntos = puntosMap.get(Number(pg.partido_id)) ?? 0
+    if (partido.jugado && partido.goles_local_real !== null && partido.goles_visitante_real !== null) {
+      puntos = calcularPuntosGrupo(
+        { goles_local: Number(pg.goles_local), goles_visitante: Number(pg.goles_visitante) },
+        { goles_local_real: Number(partido.goles_local_real), goles_visitante_real: Number(partido.goles_visitante_real) }
+      )
       puntosGrupos += puntos
       if (puntos === 10) exactosGrupos++
     }
@@ -108,8 +93,8 @@ export default async function MiProdePage({ params }: Props) {
       ronda: partido.ronda,
       equipo_local: partido.equipo_local,
       equipo_visitante: partido.equipo_visitante,
-      goles_local: pg.goles_local,
-      goles_visitante: pg.goles_visitante,
+      goles_local: Number(pg.goles_local),
+      goles_visitante: Number(pg.goles_visitante),
       jugado: partido.jugado,
       goles_local_real: partido.goles_local_real,
       goles_visitante_real: partido.goles_visitante_real,
@@ -154,7 +139,7 @@ export default async function MiProdePage({ params }: Props) {
       })),
     }))
 
-  console.log('[mi-prode] puntosGrupos:', puntosGrupos, 'exactos:', exactosGrupos, 'partidosMap.size:', partidosMap.size)
+  console.log('[mi-prode] FINAL puntosGrupos:', puntosGrupos, 'exactos:', exactosGrupos, 'partidosMap.size:', partidosMap.size)
 
   const puntosBonus = bonus && resultBonus ? calcularPuntosBonus(bonus, resultBonus) : 0
   const totalPuntos = puntosGrupos + puntosBonus
