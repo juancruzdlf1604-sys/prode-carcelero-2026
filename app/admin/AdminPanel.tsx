@@ -27,8 +27,8 @@ export default function AdminPanel() {
 
   const cargarStats = useCallback(async () => {
     const [{ count: total }, { count: confirmados }, { data: config }] = await Promise.all([
-      supabase.from('participantes').select('*', { count: 'exact', head: true }),
-      supabase.from('participantes').select('*', { count: 'exact', head: true }).eq('pago_confirmado', true),
+      supabase.from('participantes').select('*', { count: 'exact', head: true }).eq('eliminado', false),
+      supabase.from('participantes').select('*', { count: 'exact', head: true }).eq('pago_confirmado', true).eq('eliminado', false),
       supabase.from('configuracion').select('valor').eq('clave', 'precio_inscripcion').single(),
     ])
     setStats({
@@ -176,6 +176,7 @@ function TabParticipantes({ adminPass, onStatsChange }: { adminPass: string; onS
     const { data } = await supabase
       .from('participantes')
       .select('*')
+      .eq('eliminado', false)
       .order('created_at', { ascending: false })
     setParticipantes(data || [])
     setLoading(false)
@@ -528,7 +529,7 @@ function TabTabla() {
       { data: bonuses },
       { data: resultBonus },
     ] = await Promise.all([
-      supabase.from('participantes').select('id, codigo, nombre, apellido, pago_confirmado'),
+      supabase.from('participantes').select('id, codigo, nombre, apellido, pago_confirmado').eq('eliminado', false),
       supabase.from('pronosticos_grupos').select('participante_id, partido_id, goles_local, goles_visitante'),
       supabase.from('partidos').select('id, goles_local_real, goles_visitante_real, jugado').eq('jugado', true),
       supabase.from('bonus').select('*'),

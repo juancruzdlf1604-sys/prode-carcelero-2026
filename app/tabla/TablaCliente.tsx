@@ -27,7 +27,7 @@ export default function TablaCliente() {
       { data: bonuses },
       { data: resultBonus },
     ] = await Promise.all([
-      supabase.from('participantes').select('id, codigo, nombre, apellido').eq('pago_confirmado', true),
+      supabase.from('participantes').select('id, codigo, nombre, apellido').eq('pago_confirmado', true).eq('eliminado', false),
       supabase.from('pronosticos_grupos').select('participante_id, partido_id, goles_local, goles_visitante'),
       supabase.from('partidos').select('id, goles_local_real, goles_visitante_real, jugado').eq('jugado', true),
       supabase.from('bonus').select('*'),

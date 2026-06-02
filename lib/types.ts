@@ -7,6 +7,7 @@ export interface Participante {
   apellido: string
   whatsapp: string
   pago_confirmado: boolean
+  eliminado: boolean
   created_at: string
 }
 

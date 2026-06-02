@@ -28,11 +28,11 @@ export default async function MiProdePage({ params }: Props) {
 
   const { data: participante } = await supabase
     .from('participantes')
-    .select('id, codigo, nombre, apellido')
+    .select('id, codigo, nombre, apellido, eliminado')
     .eq('codigo', codigo)
     .single()
 
-  if (!participante) notFound()
+  if (!participante || participante.eliminado) notFound()
 
   const [
     { data: bonus },
