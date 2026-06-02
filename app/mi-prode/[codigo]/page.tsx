@@ -138,6 +138,8 @@ export default async function MiProdePage({ params }: Props) {
         equipo_visitante: pe.equipo_visitante,
         goles_local: pe.goles_local,
         goles_visitante: pe.goles_visitante,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ganador_penales: (pe as any).ganador_penales ?? null,
       })),
     }))
 

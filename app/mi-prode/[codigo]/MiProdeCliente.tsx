@@ -30,6 +30,7 @@ export interface PartidoElimItem {
   equipo_visitante: string
   goles_local: number | null
   goles_visitante: number | null
+  ganador_penales?: string | null
 }
 
 export interface RondaItem {
@@ -292,7 +293,13 @@ export default function MiProdeCliente({
                           </div>
                           {esEmpate && (
                             <div className="mt-1 text-center">
-                              <span className="text-white/30 text-xs italic">+ definición por penales</span>
+                              {pe.ganador_penales ? (
+                                <span className="text-white/50 text-xs">
+                                  Avanza {BANDERAS[pe.ganador_penales] || ''} <span className="font-semibold text-white/70">{pe.ganador_penales}</span> por penales
+                                </span>
+                              ) : (
+                                <span className="text-white/30 text-xs italic">+ definición por penales</span>
+                              )}
                             </div>
                           )}
                         </div>
