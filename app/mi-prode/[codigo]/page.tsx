@@ -39,7 +39,7 @@ export default async function MiProdePage({ params }: Props) {
     { data: pronosticosGruposRaw },
     { data: pronosticosElim, error: elimError },
     { data: resultBonus },
-    { data: puntosPartidos },
+    { data: puntosPartidos, error: ppError },
   ] = await Promise.all([
     supabase.from('bonus').select('*').eq('participante_id', participante.id).single(),
     supabase
@@ -57,11 +57,13 @@ export default async function MiProdePage({ params }: Props) {
       .eq('participante_id', participante.id),
   ])
 
-  console.log('[mi-prode] participante_id:', participante.id)
-  console.log('[mi-prode] pronosticosGrupos count:', pronosticosGruposRaw?.length ?? 0)
-  console.log('[mi-prode] puntosPartidos:', JSON.stringify(puntosPartidos))
-  console.log('[mi-prode] pronosticosElim count:', pronosticosElim?.length ?? 0)
-  console.log('[mi-prode] pronosticosElim error:', elimError)
+  console.log('[mi-prode] DEBUG', JSON.stringify({
+    participante_id: participante.id,
+    grupos: pronosticosGruposRaw?.length ?? 0,
+    puntosPartidos,
+    ppError: ppError?.message ?? null,
+    elimError: elimError?.message ?? null,
+  }))
 
   // Fetch partido details for the group pronosticos
   const partidosMap = new Map<number, {
