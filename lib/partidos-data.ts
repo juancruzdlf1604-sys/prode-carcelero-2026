@@ -167,22 +167,24 @@ export const BRACKET_DIECISEISAVOS: BracketSlot[] = [
   { slot: 16, l: { tipo: 'grupo', grupo: 'D', pos: 2 }, v: { tipo: 'grupo', grupo: 'G', pos: 2 } },  // M88: 2°D vs 2°G
 ]
 
+// Official FIFA 2026 bracket — octavos (Matches 89–96)
 export const BRACKET_OCTAVOS: BracketSlot[] = [
-  { slot: 1, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 1  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 2  } },
-  { slot: 2, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 3  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 4  } },
-  { slot: 3, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 5  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 6  } },
-  { slot: 4, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 7  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 8  } },
-  { slot: 5, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 9  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 10 } },
-  { slot: 6, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 11 }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 12 } },
-  { slot: 7, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 13 }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 14 } },
-  { slot: 8, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 15 }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 16 } },
+  { slot: 1, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 1  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 3  } },  // M89: W73 vs W75
+  { slot: 2, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 2  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 5  } },  // M90: W74 vs W77
+  { slot: 3, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 4  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 6  } },  // M91: W76 vs W78
+  { slot: 4, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 7  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 8  } },  // M92: W79 vs W80
+  { slot: 5, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 11 }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 12 } },  // M93: W83 vs W84
+  { slot: 6, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 9  }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 10 } },  // M94: W81 vs W82
+  { slot: 7, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 14 }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 16 } },  // M95: W86 vs W88
+  { slot: 8, l: { tipo: 'ganador', fase: 'dieciseisavos', slot: 13 }, v: { tipo: 'ganador', fase: 'dieciseisavos', slot: 15 } },  // M96: W85 vs W87
 ]
 
+// Official FIFA 2026 bracket — cuartos (Matches 97–100)
 export const BRACKET_CUARTOS: BracketSlot[] = [
-  { slot: 1, l: { tipo: 'ganador', fase: 'octavos', slot: 1 }, v: { tipo: 'ganador', fase: 'octavos', slot: 2 } },
-  { slot: 2, l: { tipo: 'ganador', fase: 'octavos', slot: 3 }, v: { tipo: 'ganador', fase: 'octavos', slot: 4 } },
-  { slot: 3, l: { tipo: 'ganador', fase: 'octavos', slot: 5 }, v: { tipo: 'ganador', fase: 'octavos', slot: 6 } },
-  { slot: 4, l: { tipo: 'ganador', fase: 'octavos', slot: 7 }, v: { tipo: 'ganador', fase: 'octavos', slot: 8 } },
+  { slot: 1, l: { tipo: 'ganador', fase: 'octavos', slot: 1 }, v: { tipo: 'ganador', fase: 'octavos', slot: 2 } },  // M97: W89 vs W90
+  { slot: 2, l: { tipo: 'ganador', fase: 'octavos', slot: 5 }, v: { tipo: 'ganador', fase: 'octavos', slot: 6 } },  // M98: W93 vs W94
+  { slot: 3, l: { tipo: 'ganador', fase: 'octavos', slot: 3 }, v: { tipo: 'ganador', fase: 'octavos', slot: 4 } },  // M99: W91 vs W92
+  { slot: 4, l: { tipo: 'ganador', fase: 'octavos', slot: 7 }, v: { tipo: 'ganador', fase: 'octavos', slot: 8 } },  // M100: W95 vs W96
 ]
 
 export const BRACKET_SEMIFINAL: BracketSlot[] = [
