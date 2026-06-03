@@ -147,23 +147,24 @@ export interface BracketSlot {
   v: SlotOrigen
 }
 
+// Official FIFA 2026 World Cup bracket (Matches 73–88)
 export const BRACKET_DIECISEISAVOS: BracketSlot[] = [
-  { slot: 1,  l: { tipo: 'grupo', grupo: 'A', pos: 1 }, v: { tipo: 'grupo', grupo: 'B', pos: 2 } },
-  { slot: 2,  l: { tipo: 'grupo', grupo: 'B', pos: 1 }, v: { tipo: 'grupo', grupo: 'A', pos: 2 } },
-  { slot: 3,  l: { tipo: 'grupo', grupo: 'C', pos: 1 }, v: { tipo: 'grupo', grupo: 'D', pos: 2 } },
-  { slot: 4,  l: { tipo: 'grupo', grupo: 'D', pos: 1 }, v: { tipo: 'grupo', grupo: 'C', pos: 2 } },
-  { slot: 5,  l: { tipo: 'grupo', grupo: 'E', pos: 1 }, v: { tipo: 'grupo', grupo: 'F', pos: 2 } },
-  { slot: 6,  l: { tipo: 'grupo', grupo: 'F', pos: 1 }, v: { tipo: 'grupo', grupo: 'E', pos: 2 } },
-  { slot: 7,  l: { tipo: 'grupo', grupo: 'G', pos: 1 }, v: { tipo: 'grupo', grupo: 'H', pos: 2 } },
-  { slot: 8,  l: { tipo: 'grupo', grupo: 'H', pos: 1 }, v: { tipo: 'grupo', grupo: 'G', pos: 2 } },
-  { slot: 9,  l: { tipo: 'grupo', grupo: 'I', pos: 1 }, v: { tipo: 'grupo', grupo: 'J', pos: 2 } },
-  { slot: 10, l: { tipo: 'grupo', grupo: 'J', pos: 1 }, v: { tipo: 'grupo', grupo: 'I', pos: 2 } },
-  { slot: 11, l: { tipo: 'grupo', grupo: 'K', pos: 1 }, v: { tipo: 'grupo', grupo: 'L', pos: 2 } },
-  { slot: 12, l: { tipo: 'grupo', grupo: 'L', pos: 1 }, v: { tipo: 'grupo', grupo: 'K', pos: 2 } },
-  { slot: 13, l: { tipo: 'best3', pos: 1 }, v: { tipo: 'best3', pos: 2 } },
-  { slot: 14, l: { tipo: 'best3', pos: 3 }, v: { tipo: 'best3', pos: 4 } },
-  { slot: 15, l: { tipo: 'best3', pos: 5 }, v: { tipo: 'best3', pos: 6 } },
-  { slot: 16, l: { tipo: 'best3', pos: 7 }, v: { tipo: 'best3', pos: 8 } },
+  { slot: 1,  l: { tipo: 'grupo', grupo: 'A', pos: 2 }, v: { tipo: 'grupo', grupo: 'B', pos: 2 } },  // M73: 2°A vs 2°B
+  { slot: 2,  l: { tipo: 'grupo', grupo: 'E', pos: 1 }, v: { tipo: 'best3', pos: 1 } },               // M74: 1°E vs 3°mejor
+  { slot: 3,  l: { tipo: 'grupo', grupo: 'F', pos: 1 }, v: { tipo: 'grupo', grupo: 'C', pos: 2 } },  // M75: 1°F vs 2°C
+  { slot: 4,  l: { tipo: 'grupo', grupo: 'C', pos: 1 }, v: { tipo: 'grupo', grupo: 'F', pos: 2 } },  // M76: 1°C vs 2°F
+  { slot: 5,  l: { tipo: 'grupo', grupo: 'I', pos: 1 }, v: { tipo: 'best3', pos: 2 } },               // M77: 1°I vs 3°mejor
+  { slot: 6,  l: { tipo: 'grupo', grupo: 'E', pos: 2 }, v: { tipo: 'grupo', grupo: 'I', pos: 2 } },  // M78: 2°E vs 2°I
+  { slot: 7,  l: { tipo: 'grupo', grupo: 'A', pos: 1 }, v: { tipo: 'best3', pos: 3 } },               // M79: 1°A vs 3°mejor
+  { slot: 8,  l: { tipo: 'grupo', grupo: 'L', pos: 1 }, v: { tipo: 'best3', pos: 4 } },               // M80: 1°L vs 3°mejor
+  { slot: 9,  l: { tipo: 'grupo', grupo: 'D', pos: 1 }, v: { tipo: 'best3', pos: 5 } },               // M81: 1°D vs 3°mejor
+  { slot: 10, l: { tipo: 'grupo', grupo: 'G', pos: 1 }, v: { tipo: 'best3', pos: 6 } },               // M82: 1°G vs 3°mejor
+  { slot: 11, l: { tipo: 'grupo', grupo: 'K', pos: 2 }, v: { tipo: 'grupo', grupo: 'L', pos: 2 } },  // M83: 2°K vs 2°L
+  { slot: 12, l: { tipo: 'grupo', grupo: 'H', pos: 1 }, v: { tipo: 'grupo', grupo: 'J', pos: 2 } },  // M84: 1°H vs 2°J
+  { slot: 13, l: { tipo: 'grupo', grupo: 'B', pos: 1 }, v: { tipo: 'best3', pos: 7 } },               // M85: 1°B vs 3°mejor
+  { slot: 14, l: { tipo: 'grupo', grupo: 'J', pos: 1 }, v: { tipo: 'grupo', grupo: 'H', pos: 2 } },  // M86: 1°J vs 2°H
+  { slot: 15, l: { tipo: 'grupo', grupo: 'K', pos: 1 }, v: { tipo: 'best3', pos: 8 } },               // M87: 1°K vs 3°mejor
+  { slot: 16, l: { tipo: 'grupo', grupo: 'D', pos: 2 }, v: { tipo: 'grupo', grupo: 'G', pos: 2 } },  // M88: 2°D vs 2°G
 ]
 
 export const BRACKET_OCTAVOS: BracketSlot[] = [
